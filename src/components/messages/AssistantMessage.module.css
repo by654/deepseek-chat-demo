@@ -1,0 +1,183 @@
+.message {
+  position: relative;
+  animation: messageIn 0.32s var(--ds-ease-out) both;
+}
+
+@keyframes messageIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.message:hover .actions,
+.message:focus-within .actions {
+  opacity: 1;
+}
+
+.message :global(.ds-assistant-message-main-content) {
+  padding-bottom: 6px;
+}
+
+.waiting {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+}
+
+.waitingDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--ui-brand);
+  animation: fading 0.9s linear infinite;
+}
+
+.waitingDot:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.waitingDot:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+@keyframes fading {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.85);
+  }
+  33%,
+  66% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--ui-danger);
+}
+
+.notice > svg {
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.notice > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.noticeAction {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--ui-brand-text);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.noticeAction:hover {
+  text-decoration: underline;
+}
+
+.bottom {
+  position: relative;
+  left: -6px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 10px;
+  padding-bottom: 8px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.alwaysShow {
+  opacity: 1;
+}
+
+.continueButton {
+  margin-left: auto;
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: 16px;
+  padding: 5px 12px 5px 6px;
+  border-radius: var(--ui-radius-pill);
+  border: 1px solid var(--ui-border);
+  background-color: var(--ui-bg-surface);
+  color: var(--ui-text-2);
+  font: var(--dsw-font-markdown-small);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    border-color var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.summary > span:first-child {
+  margin-left: 0;
+}
+
+.summary > span:last-child {
+  margin-left: 6px;
+}
+
+.summary:hover,
+.summary.summaryActive {
+  border-color: var(--ui-border-strong);
+  background-color: var(--ui-bg-hover);
+  --search-row-site-logo-color: var(--ui-bg-hover);
+}
+
+@media not all and (min-width: 768px) {
+  .bottom {
+    /* 移动端回答下方操作区：左右留白 + 44px 触摸目标，避免贴边拥挤 */
+    left: 0;
+    gap: 6px;
+    padding-top: 6px;
+    padding-bottom: 4px;
+  }
+
+  .actions {
+    /* 移动端无 hover，操作按钮常显 */
+    opacity: 1;
+    gap: 2px;
+  }
+
+  .actions > * {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .summary {
+    margin-top: 12px;
+    padding: 8px 14px 8px 8px;
+    min-height: 40px;
+  }
+
+  .notice {
+    font-size: 13px;
+    line-height: 21px;
+  }
+}

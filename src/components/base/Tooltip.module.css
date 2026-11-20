@@ -1,0 +1,27 @@
+.trigger {
+  display: inline-flex;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 1200;
+  box-sizing: border-box;
+  max-width: 260px;
+  padding: 6px 10px;
+  border-radius: var(--ui-radius-s);
+  background-color: var(--ui-tooltip-bg);
+  color: var(--ui-tooltip-text);
+  font-size: 12.5px;
+  line-height: 18px;
+  white-space: normal;
+  text-align: center;
+  box-shadow: var(--ui-shadow-md);
+  pointer-events: none;
+  animation: tooltipIn 0.12s var(--ds-ease-out);
+}
+
+@keyframes tooltipIn {
+  from {
+    opacity: 0;
+  }
+}

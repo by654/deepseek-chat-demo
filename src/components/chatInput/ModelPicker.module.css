@@ -1,0 +1,85 @@
+.picker {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 10px 0 12px;
+  border-radius: var(--ui-radius-pill);
+  border: 1px solid var(--ui-border);
+  background-color: transparent;
+  color: var(--ui-text-2);
+  font: inherit;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  max-width: 148px;
+  transition:
+    border-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    background-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    color var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.picker:hover {
+  border-color: var(--ui-border-strong);
+  background-color: var(--ui-bg-hover);
+  color: var(--ui-text-1);
+}
+
+.picker:focus-visible {
+  outline: none;
+  border-color: var(--ui-brand-border);
+  box-shadow: 0 0 0 3px var(--ui-ring);
+}
+
+.open {
+  border-color: var(--ui-brand-border);
+  background-color: var(--ui-brand-soft);
+  color: var(--ui-brand-text-strong);
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.short {
+  display: none;
+}
+
+.chevron {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--ui-text-3);
+  transition: transform var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.open .chevron {
+  transform: rotate(180deg);
+}
+
+/* 菜单里未选中项留出与勾选图标等宽的占位，保持文字对齐 */
+.placeholder {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+}
+
+@media not all and (min-width: 768px) {
+  .name {
+    display: none;
+  }
+
+  .short {
+    display: inline;
+  }
+
+  .picker {
+    padding: 0 8px 0 10px;
+    max-width: 92px;
+  }
+}

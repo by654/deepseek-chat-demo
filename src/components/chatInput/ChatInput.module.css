@@ -1,0 +1,409 @@
+.wrapper {
+  --line-height: 24px;
+  --input-padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  font-size: 16px;
+  line-height: var(--line-height);
+  border-radius: var(--ui-radius-xl);
+  border: 1px solid var(--ui-border);
+  background: var(--ui-input-bg);
+  cursor: text;
+  overflow: hidden;
+  transition:
+    border-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    box-shadow var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.wrapper:focus-within {
+  border-color: var(--ui-brand-border);
+  box-shadow: 0 0 0 3px var(--ui-brand-glow);
+}
+
+.session {
+  box-shadow: var(--ui-shadow-input);
+}
+
+.home {
+  box-shadow: var(--ui-shadow-input), var(--ui-shadow-brand);
+}
+
+.attachments {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 14px 14px 0;
+  overflow-x: auto;
+  cursor: default;
+}
+
+.attachment {
+  position: relative;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--ui-radius-m);
+  border: 1px solid var(--ui-border);
+  overflow: hidden;
+  background-color: var(--ui-bg-subtle);
+  transition: border-color var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.attachment img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.attachment:hover .remove {
+  opacity: 1;
+}
+
+.uploading {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(10, 20, 24, 0.42);
+}
+
+.uploading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -10px 0 0 -10px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.attachmentFailed {
+  border-color: var(--ui-danger);
+}
+
+.failed {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  border: none;
+  color: var(--ui-on-brand);
+  background-color: rgba(10, 20, 24, 0.5);
+  cursor: pointer;
+}
+
+.failed svg {
+  width: 18px;
+  height: 18px;
+}
+
+.failedStatic {
+  justify-content: flex-end;
+  padding-bottom: 7px;
+  cursor: default;
+  background-color: rgba(10, 20, 24, 0.26);
+}
+
+.failedReason {
+  display: -webkit-box;
+  overflow: hidden;
+  max-width: 100%;
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 500;
+  text-align: center;
+  word-break: break-word;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  color: var(--ui-on-brand);
+  background-color: rgba(10, 20, 24, 0.62);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.invalidRemove {
+  opacity: 1;
+  background-color: var(--ui-danger);
+}
+
+.textareaWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.textarea,
+.mirror {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: calc(var(--line-height) * 2 + var(--input-padding-top));
+  margin: 0;
+  padding: var(--input-padding-top) 14px 0 18px;
+  border: none;
+  font: inherit;
+  line-height: inherit;
+  font-variant-ligatures: no-contextual;
+  word-break: break-word;
+  white-space: pre-wrap;
+  overflow: auto;
+}
+
+.textarea {
+  position: absolute;
+  height: 100%;
+  resize: none;
+  outline: none;
+  overscroll-behavior: contain;
+  background-color: transparent;
+  color: var(--ui-text-1);
+  caret-color: var(--ui-brand);
+  /* 隐藏 textarea 自带的滚动条轨道，避免在单行时出现一条横线/竖线伪影 */
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.textarea::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.textarea::placeholder {
+  color: var(--ui-text-3);
+  user-select: none;
+}
+
+.textareaHidden {
+  visibility: hidden;
+}
+
+@media not all and (min-width: 440px) {
+  .textarea,
+  .mirror {
+    min-height: calc(var(--line-height) * 1.25 + var(--input-padding-top));
+  }
+}
+
+.mirror {
+  visibility: hidden;
+  pointer-events: none;
+  max-height: 336px;
+}
+
+@media not all and (min-width: 768px) {
+  .wrapper {
+    flex-shrink: 0;
+    max-height: calc(var(--app-viewport-height, 100dvh) - 120px);
+  }
+
+  .textareaWrapper {
+    min-height: 0;
+  }
+
+  .attachments,
+  .functionRow {
+    flex-shrink: 0;
+  }
+}
+
+.functionRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  /* 显式清掉边框、阴影与背景图，确保输入区与功能栏之间只有留白、没有任何分割线 */
+  border: 0;
+  box-shadow: none;
+  background-color: transparent;
+  background-image: none;
+  outline: none;
+  padding: 10px 12px 12px;
+}
+
+/*
+ * 占位文字不带任何下划线/装饰线：历史上 placeholder 继承过 underline 装饰，
+ * 视觉上会表现成「请输入消息」下方一条多余的横线
+ */
+.textarea::placeholder {
+  text-decoration: none;
+  border-bottom: 0;
+  text-shadow: none;
+  opacity: 1;
+}
+
+.toggles {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.collapsedToggles .toggleLabel {
+  display: none;
+}
+
+.toggle {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--ui-radius-pill);
+  border: 1px solid var(--ui-border);
+  background-color: transparent;
+  color: var(--ui-text-2);
+  font: inherit;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    border-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    background-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    color var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.toggle:hover:not(:disabled) {
+  border-color: var(--ui-border-strong);
+  background-color: var(--ui-bg-hover);
+  color: var(--ui-text-1);
+}
+
+.toggle:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.toggle.selected {
+  border-color: var(--ui-brand-border);
+  background-color: var(--ui-brand-soft);
+  color: var(--ui-brand-text-strong);
+}
+
+.toggle.selected:hover {
+  background-color: var(--ui-brand-soft-hover);
+}
+
+.right {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.sendButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  margin-left: 6px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--ui-brand);
+  color: var(--ui-on-brand);
+  cursor: pointer;
+  box-shadow: 0 2px 8px -2px var(--ui-brand-glow);
+  transition:
+    background-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    transform var(--ds-transition-duration) var(--ds-ease-out);
+}
+
+.sendButton:not(.disabled):hover {
+  background: var(--ui-brand-hover);
+  transform: translateY(-1px);
+}
+
+.sendButton.disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* 输出期间的排队发送按钮：中性色，与停止按钮并列 */
+.queueSendButton {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  margin-left: 6px;
+  padding: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: 50%;
+  background-color: var(--ui-bg-elevated);
+  color: var(--ui-text-secondary);
+  cursor: pointer;
+  transition:
+    background-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    color var(--ds-transition-duration) var(--ds-ease-in-out),
+    transform var(--ds-transition-duration) var(--ds-ease-out);
+}
+
+.queueSendButton:not(.disabled):hover {
+  background-color: var(--ui-bg-muted);
+  color: var(--ui-text-primary);
+  transform: translateY(-1px);
+}
+
+.queueSendButton.disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.queueBadge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background-color: var(--ui-brand);
+  color: var(--ui-on-brand);
+  font-size: 10px;
+  line-height: 15px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}

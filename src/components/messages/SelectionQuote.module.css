@@ -1,0 +1,36 @@
+.quote {
+  position: fixed;
+  z-index: 950;
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: 15px;
+  background-color: var(--ui-bg-elevated);
+  color: var(--ui-text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: var(--ui-shadow-m);
+  cursor: pointer;
+  transform: translateX(-50%);
+  animation: quoteIn 140ms var(--ds-ease-out) both;
+}
+
+.quote:hover {
+  border-color: var(--ui-brand);
+  color: var(--ui-brand);
+}
+
+@keyframes quoteIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}

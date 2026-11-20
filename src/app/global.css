@@ -1,0 +1,174 @@
+/* 阅读宽度：正文列 780px，落在 760–820px 舒适区间 */
+:root {
+  --message-list-max-width: 860px;
+  --message-list-padding-horizontal: 40px;
+}
+
+@media (max-width: 1023px) {
+  :root {
+    --message-list-max-width: 720px;
+    --message-list-padding-horizontal: 32px;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  overflow: hidden;
+  margin: 0;
+  word-break: break-word;
+  font-family: var(--dsw-font-family);
+  font-size: var(--ds-font-size-m);
+  line-height: var(--ui-line-height-base);
+  color: var(--dsw-alias-label-primary);
+  background-color: var(--dsw-alias-bg-base);
+  -webkit-text-size-adjust: none;
+  -webkit-tap-highlight-color: transparent;
+  font-feature-settings: 'kern';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+
+  --scroll-color: rgba(18, 47, 55, 0.14);
+  --scroll-color-hover: rgba(18, 47, 55, 0.26);
+}
+
+body.dark {
+  color-scheme: dark;
+}
+
+body[data-ds-dark-theme] {
+  --scroll-color: rgba(255, 255, 255, 0.16);
+  --scroll-color-hover: rgba(255, 255, 255, 0.28);
+}
+
+/* 主题切换瞬间关闭所有过渡，避免颜色插值闪烁 */
+body.change-theme *,
+body.change-theme *::before,
+body.change-theme *::after {
+  transition: none !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+figure,
+blockquote,
+dl,
+dd {
+  margin: 0;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+/* 统一可见焦点环：只在键盘导航时出现 */
+:focus-visible {
+  outline: 2px solid var(--ui-ring);
+  outline-offset: 2px;
+}
+
+::selection {
+  color: var(--ui-text-1);
+  background-color: var(--ui-brand-soft-hover);
+}
+
+/* 细滚动条 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-color) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: var(--ui-radius-pill);
+  background-color: var(--scroll-color);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scroll-color-hover);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+@media not all and (min-width: 768px) {
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior-y: none;
+  }
+}
+
+/*
+ * 尊重系统「减少动态效果」：做有意义的降级，而不是把动效整体归零。
+ * 之前用 0.001ms 抹平全部 animation/transition，在开启了该偏好的系统上
+ * 会表现为「动画完全消失、点击毫无反馈」，因此改为：
+ * 1) 保留极短的淡入淡出反馈（140ms / 90ms），去掉长时运动；
+ * 2) 循环类动画（shimmer、脉冲、旋转）只跑一次即停，避免持续重绘；
+ * 3) 关闭滚动动效与平滑位移。
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 140ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 90ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 交互动画：统一按钮与可点区域的过渡时长和缓动，避免生硬跳变 */
+button,
+[role='button'],
+[role='option'],
+a {
+  transition:
+    background-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    border-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    color var(--ds-transition-duration) var(--ds-ease-in-out),
+    box-shadow var(--ds-transition-duration) var(--ds-ease-in-out),
+    opacity var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+/* 深色/浅色切换时页面底色与文字颜色同步过渡 */
+body {
+  transition:
+    background-color var(--ds-transition-duration-slow) var(--ds-ease-in-out),
+    color var(--ds-transition-duration-slow) var(--ds-ease-in-out);
+}

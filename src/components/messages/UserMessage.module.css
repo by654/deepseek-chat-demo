@@ -1,0 +1,159 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding-bottom: 20px;
+  /* 与回答消息一致的进入动画，发送后不再「瞬间铺上去」 */
+  animation: userMessageIn 0.28s var(--ds-ease-out) both;
+}
+
+@keyframes userMessageIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.container.isFirst {
+  padding-top: 34px;
+}
+
+.container:hover .actions {
+  opacity: 1;
+}
+
+.files {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 10px;
+  max-width: 100%;
+  margin-bottom: 8px;
+}
+
+.filesWithDocuments {
+  --message-file-image-size: 64px;
+}
+
+.bubble {
+  max-width: calc(100% - 88px);
+  box-sizing: border-box;
+  padding: 11px 16px;
+  border: 1px solid var(--ui-border-subtle);
+  border-radius: var(--ui-radius-l) var(--ui-radius-l) var(--ui-radius-xs) var(--ui-radius-l);
+  font-size: 15.5px;
+  line-height: 25px;
+  color: var(--ui-text-1);
+  background-color: var(--ui-bubble-bg);
+  white-space: pre-wrap;
+  word-break: break-word;
+  box-shadow: var(--ui-shadow-sm);
+}
+
+.bottom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 28px;
+  margin-top: 8px;
+  padding-right: 4px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.actions:focus-within {
+  opacity: 1;
+}
+
+.alwaysShow {
+  opacity: 1;
+}
+
+.editor {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--ui-brand);
+  border-radius: var(--ui-radius-l);
+  background-color: var(--ui-input-bg);
+  box-shadow: 0 0 0 3px var(--ui-brand-glow);
+  overflow: hidden;
+}
+
+.textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 46px;
+  max-height: 202px;
+  padding: 11px 16px;
+  border: none;
+  outline: none;
+  resize: none;
+  font: inherit;
+  font-size: 15.5px;
+  line-height: 25px;
+  color: var(--ui-text-1);
+  background: transparent;
+}
+
+.editorActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 6px 10px 10px;
+}
+
+@media not all and (min-width: 440px) {
+  .bubble {
+    max-width: calc(100% - 68px);
+  }
+}
+
+@media not all and (min-width: 768px) {
+  .container {
+    padding-bottom: 18px;
+  }
+
+  .container.isFirst {
+    padding-top: 20px;
+  }
+
+  .bubble {
+    /* 移动端气泡不再顶到屏幕边缘，留出呼吸空间 */
+    max-width: min(calc(100% - 32px), calc(100vw - 40px));
+    padding: 10px 14px;
+    font-size: 15px;
+    line-height: 24px;
+  }
+
+  .files {
+    gap: 8px;
+    max-width: calc(100% - 8px);
+  }
+
+  .bottom {
+    /* 消息下方操作区：加大行高与右侧留白，并保证 44px 触摸目标 */
+    height: 44px;
+    margin-top: 2px;
+    padding-right: 0;
+    gap: 4px;
+  }
+
+  .actions {
+    /* 移动端没有 hover，操作按钮常显 + 44px 触摸区 */
+    opacity: 1;
+    gap: 2px;
+  }
+
+  .actions > * {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}

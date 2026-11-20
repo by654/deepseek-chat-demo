@@ -1,0 +1,61 @@
+.anchor {
+  display: inline-flex;
+}
+
+.menu {
+  position: fixed;
+  z-index: 900;
+  box-sizing: border-box;
+  min-width: 132px;
+  padding: 5px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-m);
+  background-color: var(--ui-bg-elevated);
+  box-shadow: var(--ui-shadow-lg);
+  /* 以触发点为缩放原点，避免从屏幕中心放大产生的错位感 */
+  transform-origin: top left;
+  animation: menuIn 0.14s var(--ds-ease-out);
+}
+
+@keyframes menuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--ui-radius-s);
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--ui-text-1);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.option:hover {
+  background-color: var(--ui-bg-hover);
+}
+
+.icon {
+  display: flex;
+  font-size: 16px;
+  color: var(--ui-text-2);
+}
+
+.danger {
+  color: var(--ui-danger);
+}
+
+.danger .icon {
+  color: var(--ui-danger);
+}
+
+.danger:hover {
+  background-color: var(--ui-danger-soft);
+}

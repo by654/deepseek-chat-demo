@@ -1,0 +1,315 @@
+.sider {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: 268px;
+  height: 100%;
+  padding: 10px 12px 0;
+  background: var(--dsw-specific-sidebar-fill);
+  /* 展开时从左侧轻微滑入，避免「瞬间出现」的生硬感 */
+  animation: siderIn var(--ds-transition-duration-slow) var(--ds-ease-out);
+}
+
+@keyframes siderIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+}
+
+.sider > * {
+  /* 内容随侧栏一起淡入，层级错开一点更自然 */
+  animation: siderItemIn var(--ds-transition-duration-slow) var(--ds-ease-out) backwards;
+}
+
+@keyframes siderItemIn {
+  from {
+    opacity: 0;
+  }
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 8px;
+  height: 52px;
+  margin-bottom: 14px;
+  padding: 6px 0 6px 4px;
+}
+
+.appName {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding-left: 4px;
+  overflow: hidden;
+  font-size: 17px;
+  line-height: 24px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ui-text-1);
+}
+
+.appName::before {
+  content: '';
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--ui-brand) 0%, var(--ui-brand-text) 100%);
+  box-shadow: 0 0 0 3px var(--ui-brand-soft);
+}
+
+.newChat {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: 100%;
+  height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--ui-brand-border);
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand-text-strong);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  transition:
+    background-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    border-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    box-shadow var(--ds-transition-duration) var(--ds-ease-in-out),
+    transform var(--ds-transition-duration) var(--ds-ease-out);
+}
+
+.newChat:hover {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand-soft-hover);
+  box-shadow: var(--ui-shadow-sm);
+}
+
+.newChat:active {
+  transform: translateY(1px);
+}
+
+.newChat:focus-visible {
+  box-shadow: 0 0 0 2px var(--ui-ring);
+}
+
+.newChatIcon {
+  display: flex;
+  margin-right: 7px;
+}
+
+.listWrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin-top: 6px;
+}
+
+.list {
+  height: 100%;
+  margin: 0 -6px;
+  padding: 0 6px 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.section {
+  position: relative;
+  margin-top: 10px;
+  padding-top: 2px;
+}
+
+.sectionHeader {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 6px 8px 4px;
+  font-size: 11.5px;
+  line-height: 18px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ui-text-3);
+  background-color: var(--dsw-specific-sidebar-fill);
+}
+
+.bottom {
+  display: flex;
+  flex-shrink: 0;
+  margin-top: 4px;
+  padding: 8px 0 10px;
+  border-top: 1px solid var(--ui-border-subtle);
+}
+
+.settings {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  margin-block: auto;
+  padding: 7px 10px;
+  border: none;
+  border-radius: var(--ui-radius-m);
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  transition: background-color var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.settings:hover {
+  background-color: var(--dsw-specific-sidebar-nav-item-hover);
+}
+
+.settings:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--ui-brand);
+}
+
+.settingsIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  color: var(--ui-text-2);
+}
+
+.settingsLabel {
+  min-width: 0;
+  margin-left: 8px;
+  overflow: hidden;
+  font-size: 14px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ui-text-2);
+}
+
+.settings:hover .settingsLabel,
+.settings:hover .settingsIcon {
+  color: var(--ui-text-1);
+}
+
+.collapsed {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 14px 0 0 16px;
+}
+
+.collapsedGroup {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 40px;
+  padding: 0 3px;
+  border-radius: var(--ui-radius-pill);
+  border: 1px solid var(--ui-border);
+  background: var(--ui-bg-surface);
+  box-shadow: var(--ui-shadow-md);
+}
+
+.drawer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 800;
+  animation: drawerIn var(--ds-transition-duration-slow) var(--ds-ease-out);
+}
+
+@keyframes drawerIn {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+.drawerMask {
+  position: absolute;
+  inset: 0;
+  z-index: 799;
+  /* 遮罩去掉 backdrop-filter：整屏模糊是移动端抽屉卡顿的主因，改用半透明纯色 */
+  background-color: rgba(10, 20, 24, 0.42);
+  animation: maskIn var(--ds-transition-duration) var(--ds-ease-out);
+}
+
+@keyframes maskIn {
+  from {
+    opacity: 0;
+  }
+}
+
+.mobile {
+  width: 300px;
+  max-width: calc(100vw - 48px);
+}
+
+@media not all and (min-width: 768px) {
+  .sider.mobile {
+    padding: 12px 12px 0;
+    border-right: 1px solid var(--ui-border);
+    box-shadow: var(--ui-shadow-lg);
+  }
+
+  .top {
+    height: 56px;
+    margin-bottom: 12px;
+  }
+
+  .listWrap {
+    margin-top: 10px;
+  }
+
+  .sectionHeader {
+    padding: 4px 10px 3px;
+    font-size: 13px;
+    line-height: 22px;
+    letter-spacing: 0.02em;
+  }
+
+  .bottom {
+    padding: 12px 0;
+  }
+
+  .settings {
+    padding: 9px 10px;
+  }
+
+  .settingsIcon {
+    width: auto;
+    height: auto;
+  }
+
+  .settingsIcon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .settingsLabel {
+    margin-left: 10px;
+    font-size: 16px;
+    line-height: 22px;
+  }
+}

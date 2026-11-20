@@ -1,0 +1,60 @@
+.container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-gutter: stable both-edges;
+  scrollbar-color: var(--scroll-color) transparent;
+}
+
+.scroll {
+  display: contents;
+}
+
+.column {
+  width: calc(var(--message-list-max-width) - 2 * var(--message-list-padding-horizontal));
+  max-width: calc(100% - 40px);
+  margin: 0 auto;
+  padding-bottom: 28px;
+}
+
+@media not all and (min-width: 768px) {
+  .container {
+    overflow: hidden;
+    scrollbar-gutter: auto;
+  }
+
+  .scroll {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-color: var(--scroll-color) transparent;
+  }
+
+  .column {
+    /* 移动端左右页边距由 12px 提升到 20px，回答下方操作按钮不再贴边 */
+    width: 100%;
+    max-width: calc(100% - 40px);
+    padding-bottom: 16px;
+  }
+}
+
+/* 淡化输出：开启时每条新消息自上而下淡入，关闭则直接出现 */
+:global(html[data-fade-output='on']) .column > * {
+  animation: messageFadeIn 320ms var(--ds-ease-out) both;
+}
+
+@keyframes messageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

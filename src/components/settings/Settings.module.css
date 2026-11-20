@@ -1,0 +1,682 @@
+.dialog {
+  --modal-header-gap: 7px;
+  width: 780px;
+  height: 512px;
+  max-height: calc(100vh - 40px);
+  padding: 20px 24px 22px;
+}
+
+.dialogMain {
+  display: flex;
+  /* Modal 基础样式把 main 设成纵向（flex-direction: column），这里显式改回两列：左导航 + 右内容 */
+  flex-direction: row;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+  color: var(--ui-text-1);
+}
+
+/* 两列布局的内边距由 .dialog 统一提供，抵消 Modal 给 main 的默认内边距 */
+.dialog .dialogMain {
+  padding: 0;
+}
+
+.navigation {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 4px;
+  width: 176px;
+  margin: 4px 16px 0 -8px;
+  padding-top: 2px;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  box-sizing: border-box;
+  width: calc(100% - 8px);
+  min-height: 40px;
+  margin: 0 4px;
+  padding: 9px 10px 9px 10px;
+  border: none;
+  border-radius: var(--ui-radius-m);
+  background-color: transparent;
+  color: var(--ui-text-2);
+  font: inherit;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  transition:
+    background-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    color var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.navItem svg {
+  flex-shrink: 0;
+}
+
+.navItem:hover {
+  background-color: var(--ui-bg-hover);
+  color: var(--ui-text-1);
+}
+
+.navItem.navItemActive {
+  background-color: var(--ui-brand-soft);
+  color: var(--ui-brand-text-strong);
+  font-weight: 600;
+}
+
+.navItem:focus-visible {
+  box-shadow: 0 0 0 2px var(--ui-ring);
+}
+
+.content {
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  margin-right: -24px;
+  padding: 0 24px;
+  overflow-y: auto;
+  border-left: 1px solid var(--ui-border-subtle);
+}
+
+.cell {
+  box-sizing: border-box;
+  flex-shrink: 0;
+  min-height: 62px;
+  padding: 14px 0;
+  color: var(--ui-text-1);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.cell + .cell {
+  box-shadow: inset 0 1px 0 0 var(--ui-border-subtle);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.text {
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding-right: 48px;
+}
+
+.label {
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 550;
+  color: var(--ui-text-1);
+}
+
+.uploadButton {
+  flex-shrink: 0;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-pill);
+  background-color: var(--ui-bg-surface);
+  color: var(--ui-text-1);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 550;
+  cursor: pointer;
+  transition:
+    border-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    background-color var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.uploadButton:hover {
+  border-color: var(--ui-brand-border);
+  background-color: var(--ui-brand-soft);
+  color: var(--ui-brand-text-strong);
+}
+
+.locationCell {
+  flex-wrap: wrap;
+}
+
+.locationCell .text {
+  flex: 1 0 auto;
+  padding-right: 8px;
+}
+
+.locationSelectors {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.locationSelectors > button {
+  flex-shrink: 1;
+  min-width: 0;
+  text-align: start;
+}
+
+.provinceSelect {
+  width: 159px;
+}
+
+.locationSelectors > .citySelect {
+  min-width: 120px;
+  width: 120px;
+}
+
+.regionSelect {
+  max-width: min(285px, 100%);
+}
+
+.theme {
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.themeOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 12px 0 12px;
+}
+
+.themeOption {
+  position: relative;
+  display: inline-flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  box-sizing: border-box;
+  min-width: 132px;
+  height: 78px;
+  padding: 16px 24px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-l);
+  background-color: var(--ui-bg-surface);
+  color: var(--ui-text-2);
+  font: inherit;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  transition:
+    background-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    border-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    box-shadow var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.themeOption:hover {
+  border-color: var(--ui-border-strong);
+  background-color: var(--ui-bg-hover);
+}
+
+.themeOption.themeOptionSelected {
+  border-color: var(--ui-brand);
+  background-color: var(--ui-brand-soft);
+  color: var(--ui-brand-text-strong);
+  box-shadow: 0 0 0 1px var(--ui-brand) inset;
+}
+
+.themeOption:focus-visible {
+  box-shadow: 0 0 0 2px var(--ui-ring);
+}
+
+.description {
+  font-size: 12.5px;
+  line-height: 19px;
+  color: var(--ui-text-3);
+}
+
+/** 用量计费：数值输入框，与右侧操作区对齐 */
+.numberInput {
+  box-sizing: border-box;
+  width: 132px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-m);
+  background-color: var(--ui-bg-surface);
+  color: var(--ui-text-1);
+  font: inherit;
+  font-size: 13px;
+  line-height: 20px;
+  text-align: right;
+  outline: none;
+  transition:
+    border-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    box-shadow var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.numberInput:hover {
+  border-color: var(--ui-border-strong);
+}
+
+.numberInput:focus {
+  border-color: var(--ui-brand);
+  box-shadow: 0 0 0 2px var(--ui-ring);
+}
+
+.numberInput::placeholder {
+  color: var(--ui-text-3);
+}
+
+.error {
+  font-size: 12.5px;
+  line-height: 19px;
+  color: var(--ui-danger);
+}
+
+.apiKey {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 4px;
+}
+
+.apiKeySaved,
+.apiKeyInput {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: 42px;
+  font-size: 14px;
+  line-height: 24px;
+  transition:
+    border-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    box-shadow var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.apiKeySaved {
+  justify-content: space-between;
+  padding: 0 8px 0 16px;
+  border: 1px solid var(--ui-border-subtle);
+  border-radius: var(--ui-radius-pill);
+  background-color: var(--ui-bg-subtle);
+}
+
+.apiKeyMask {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-family: var(--ds-font-family-code);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--ui-text-2);
+  user-select: none;
+}
+
+.apiKeyInput {
+  gap: 12px;
+  padding: 0 14px;
+  border-radius: var(--ui-radius-pill);
+  border: 1px solid var(--ui-border);
+  background-color: var(--ui-input-bg);
+}
+
+.apiKeyInput:focus-within {
+  border-color: var(--ui-brand);
+  box-shadow: 0 0 0 3px var(--ui-brand-glow);
+}
+
+.apiKeyInput input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--ui-text-1);
+  font: inherit;
+  font-family: var(--ds-font-family-code);
+  font-size: 13.5px;
+  letter-spacing: 0.01em;
+  caret-color: var(--ui-brand);
+}
+
+.apiKeyInput input::placeholder {
+  color: var(--ui-text-3);
+  font-family: inherit;
+  letter-spacing: normal;
+}
+
+.divider {
+  flex-shrink: 0;
+  width: 1px;
+  height: 18px;
+  background-color: var(--ui-border);
+}
+
+.confirm {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border: none;
+  border-radius: var(--ui-radius-pill);
+  background: none;
+  color: var(--ui-brand-text);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 22px;
+  cursor: pointer;
+  transition: background-color var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.confirm:hover:not(:disabled) {
+  background-color: var(--ui-brand-soft);
+}
+
+.confirm:disabled {
+  color: var(--ui-text-3);
+  cursor: default;
+}
+
+.mobileConfirm {
+  display: none;
+}
+
+.importConfirm {
+  padding-top: 26px;
+  padding-bottom: 24px;
+}
+
+.importConfirmText {
+  color: var(--ui-text-1);
+}
+
+.deleteConfirm {
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+}
+
+.deleteActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+
+@media not all and (min-width: 768px) {
+  .dialog {
+    align-self: flex-end;
+    width: 100%;
+    max-width: none;
+    /* 底部抽屉：高度随内容自适应，超出上限时内部滚动，避免内容不足时底部大面积留白 */
+    height: auto;
+    max-height: calc(100dvh - 56px);
+    max-height: min(calc(100dvh - 56px), 820px);
+    padding: 18px 16px 16px;
+    border-radius: var(--ui-radius-xxl) var(--ui-radius-xxl) 0 0;
+  }
+
+  .dialogMain {
+    flex-direction: column;
+    /* 不再以 flex-basis: 0 撑满卡片，改为由内容决定高度；超过上限时允许收缩以让内部滚动 */
+    flex: 0 1 auto;
+    min-height: 0;
+  }
+
+  .navigation {
+    flex-direction: row;
+    /* 页签多于屏宽时横向滚动：不换行、不拉伸压缩，隐藏滚动条保持干净 */
+    flex-wrap: nowrap;
+    gap: 6px;
+    width: auto;
+    margin: 4px 0 8px;
+    padding: 4px 0 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .navigation::-webkit-scrollbar {
+    display: none;
+  }
+
+  .navItem {
+    /* 内容宽度参与横向滚动，不再 flex-grow 填满屏宽 */
+    flex: 0 0 auto;
+    justify-content: center;
+    width: auto;
+    min-width: 96px;
+    min-height: 44px;
+    margin: 0;
+    white-space: nowrap;
+    scroll-snap-align: center;
+  }
+
+  .navItem:first-child {
+    margin-left: 2px;
+  }
+
+  .navItem:last-child {
+    margin-right: 2px;
+  }
+
+  .content {
+    /* 内容自适应高度；内容超高时在本区域内滚动，而不是把卡片拉满 */
+    flex: 0 1 auto;
+    margin-right: 0;
+    padding: 14px 0 calc(12px + env(safe-area-inset-bottom));
+    border-left: none;
+  }
+
+  .text {
+    padding-right: 8px;
+  }
+
+  .cellButton {
+    flex-shrink: 0;
+    min-height: 44px;
+  }
+
+  .cellButton svg {
+    display: none;
+  }
+
+  .locationCell {
+    gap: 12px;
+  }
+
+  .locationCell .text {
+    flex-basis: 100%;
+    padding-right: 0;
+  }
+
+  .locationSelectors {
+    width: 100%;
+    gap: 10px;
+  }
+
+  .provinceSelect,
+  .citySelect {
+    flex: 1 1 auto;
+  }
+
+  .apiKey {
+    padding-bottom: 0;
+  }
+
+  .apiKeySaved,
+  .apiKeyInput {
+    height: 52px;
+    padding: 0 12px 0 16px;
+    font-size: 16px;
+  }
+
+  .apiKeySaved svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .mobileConfirm {
+    display: block;
+    flex-shrink: 0;
+    width: calc(100% - 16px);
+    height: 52px;
+    margin: 16px 8px 0;
+    border: none;
+    border-radius: var(--ui-radius-pill);
+    background: var(--ui-brand);
+    color: var(--ui-on-brand);
+    font: inherit;
+    font-size: 17px;
+    line-height: 24px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .mobileConfirm:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  .deleteActions > button {
+    min-height: 44px;
+    height: auto;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    max-width: 100%;
+  }
+}
+
+/* 主色预设：横向色块 + 名称，自定义项内嵌取色器 */
+.accent {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 0;
+}
+
+.accentOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.accentOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: 18px;
+  background-color: var(--ui-bg-elevated);
+  color: var(--ui-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    border-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    color var(--ds-transition-duration) var(--ds-ease-in-out),
+    background-color var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.accentOption:hover {
+  border-color: var(--ui-border-strong);
+  color: var(--ui-text-primary);
+}
+
+.accentOptionSelected {
+  border-color: var(--ui-brand);
+  background-color: var(--ui-brand-weak);
+  color: var(--ui-text-primary);
+}
+
+.swatch {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+.colorInput {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+
+/* 字体缩放滑杆 */
+.slider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.range {
+  width: 132px;
+  accent-color: var(--ui-brand);
+  cursor: pointer;
+}
+
+.rangeValue {
+  min-width: 42px;
+  color: var(--ui-text-secondary);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* 提示词输入 */
+.promptInput {
+  width: 260px;
+  min-height: 62px;
+  padding: 8px 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-m);
+  background-color: var(--ui-bg-elevated);
+  color: var(--ui-text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 20px;
+  resize: vertical;
+}
+
+.promptInput:focus {
+  border-color: var(--ui-brand);
+  outline: none;
+}
+
+@media not all and (min-width: 768px) {
+  .range {
+    width: 96px;
+  }
+
+  .promptInput {
+    width: 100%;
+  }
+}

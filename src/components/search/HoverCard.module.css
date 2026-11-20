@@ -1,0 +1,19 @@
+.card {
+  position: fixed;
+  z-index: 950;
+  box-sizing: border-box;
+  max-width: 360px;
+  padding: 16px;
+  border-radius: var(--ui-radius-l);
+  border: 1px solid var(--ui-border);
+  background: var(--ui-bg-elevated);
+  box-shadow: var(--ui-shadow-lg);
+  animation: hoverIn 0.12s var(--ds-ease-out);
+}
+
+@keyframes hoverIn {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}

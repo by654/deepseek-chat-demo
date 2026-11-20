@@ -1,0 +1,324 @@
+/* ==========================================================================
+   设计令牌（Design Tokens）
+   主色：青灰蓝；中性色：带轻微青调的板岩灰。
+   所有组件样式必须通过这里的变量取色，禁止在模块内硬编码颜色。
+   ========================================================================== */
+
+:root {
+  /* ---- 排版 ---- */
+  --dsw-font-family:
+    system-ui, -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC',
+    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --ds-font-family-code:
+    'JetBrains Mono', 'Cascadia Code', 'Cascadia Mono', Consolas, 'SF Mono', Menlo, Monaco,
+    'Ubuntu Mono', 'Courier New', monospace;
+  --ui-font-size-base: 14px;
+  --ui-line-height-base: 1.7;
+
+  /* ---- 控件尺寸（触摸目标 ≥ 44px） ---- */
+  --ds-control-height-xl: 44px;
+  --ds-control-height-l: 40px;
+  --ds-control-height-m: 36px;
+  --ds-control-height-s: 32px;
+  --ds-control-height-xs: 28px;
+  --ds-font-size-m: 14px;
+
+  /* ---- 圆角 ---- */
+  --ui-radius-xs: 6px;
+  --ui-radius-s: 10px;
+  --ui-radius-m: 14px;
+  --ui-radius-l: 18px;
+  --ui-radius-xl: 24px;
+  --ui-radius-xxl: 30px;
+  --ui-radius-pill: 999px;
+
+  /* ---- 间距节奏 ---- */
+  --ui-space-1: 4px;
+  --ui-space-2: 8px;
+  --ui-space-3: 12px;
+  --ui-space-4: 16px;
+  --ui-space-5: 20px;
+  --ui-space-6: 24px;
+  --ui-space-8: 32px;
+
+  /* ---- 动效 ---- */
+  --ds-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ds-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ds-transition-duration: 0.2s;
+  --ds-transition-duration-slow: 0.3s;
+
+  font-variant-ligatures: no-contextual;
+}
+
+/* ---- 浅色主题 ---- */
+body {
+  color-scheme: light;
+
+  --ui-bg-app: #eff3f3;
+  --ui-bg-sidebar: #eff3f3;
+  --ui-bg-canvas: #fbfcfc;
+  --ui-bg-surface: #ffffff;
+  --ui-bg-elevated: #ffffff;
+  --ui-bg-subtle: #eaf0f0;
+  --ui-overlay: rgba(12, 24, 28, 0.34);
+  --ui-bg-hover: rgba(18, 47, 55, 0.055);
+  --ui-bg-active: rgba(18, 47, 55, 0.095);
+  --ui-bg-active-strong: rgba(18, 47, 55, 0.14);
+
+  --ui-border-subtle: rgba(18, 47, 55, 0.06);
+  --ui-border: rgba(18, 47, 55, 0.1);
+  --ui-border-strong: rgba(18, 47, 55, 0.16);
+
+  --ui-text-1: #16262b;
+  --ui-text-2: #45585e;
+  --ui-text-3: #64777d;
+  --ui-text-dim: #b9c8ca;
+
+  --ui-brand: #2f6b7a;
+  --ui-brand-hover: #275a67;
+  --ui-brand-soft: #e6eef0;
+  --ui-brand-soft-hover: #d9e6e9;
+  --ui-brand-border: #b7cfd4;
+  --ui-brand-text: #2a6273;
+  --ui-brand-text-strong: #1d4b57;
+  --ui-on-brand: #ffffff;
+  --ui-brand-glow: rgba(47, 107, 122, 0.16);
+
+  --ui-danger: #c34434;
+  --ui-danger-hover: #a93a2c;
+  --ui-danger-soft: #fbeeec;
+  --ui-danger-border: #e6b3aa;
+  --ui-success: #2f7d5c;
+  --ui-warning: #a97318;
+
+  --ui-bubble-bg: #e8f0f1;
+  --ui-input-bg: #ffffff;
+  --ui-code-bg: #f5f8f8;
+  --ui-code-banner: #eef3f3;
+  --ui-inline-code-bg: #edf2f2;
+  --ui-citation: #e8eded;
+  --ui-tag-bg: #edf2f2;
+  --ui-toast-bg: #26353a;
+  --ui-tooltip-bg: #1f2c30;
+  --ui-tooltip-text: #f4f8f8;
+  --ui-contrast: #2a3b40;
+  --ui-ring: rgba(47, 107, 122, 0.32);
+
+  --ui-shadow-sm: 0 1px 2px rgba(16, 38, 44, 0.05), 0 1px 1px rgba(16, 38, 44, 0.03);
+  --ui-shadow-md: 0 2px 6px rgba(16, 38, 44, 0.06), 0 8px 20px -8px rgba(16, 38, 44, 0.12);
+  --ui-shadow-lg: 0 4px 10px rgba(16, 38, 44, 0.06), 0 22px 48px -20px rgba(16, 38, 44, 0.22);
+  --ui-shadow-input: 0 1px 2px rgba(16, 38, 44, 0.04), 0 12px 28px -14px rgba(16, 38, 44, 0.18);
+  --ui-shadow-brand: 0 8px 24px -12px rgba(47, 107, 122, 0.5);
+}
+
+/* ---- 深色主题 ---- */
+body[data-ds-dark-theme] {
+  color-scheme: dark;
+
+  --ui-bg-app: #0f1517;
+  --ui-bg-sidebar: #0f1517;
+  --ui-bg-canvas: #121a1c;
+  --ui-bg-surface: #182124;
+  --ui-bg-elevated: #1b2528;
+  --ui-bg-subtle: #1e282b;
+  --ui-overlay: rgba(0, 0, 0, 0.58);
+  --ui-bg-hover: rgba(255, 255, 255, 0.06);
+  --ui-bg-active: rgba(255, 255, 255, 0.1);
+  --ui-bg-active-strong: rgba(255, 255, 255, 0.16);
+
+  --ui-border-subtle: rgba(255, 255, 255, 0.06);
+  --ui-border: rgba(255, 255, 255, 0.1);
+  --ui-border-strong: rgba(255, 255, 255, 0.16);
+
+  --ui-text-1: #e9f1f2;
+  --ui-text-2: #b3c2c5;
+  --ui-text-3: #8ca0a4;
+  --ui-text-dim: #415155;
+
+  --ui-brand: #6fb0be;
+  --ui-brand-hover: #86c1cd;
+  --ui-brand-soft: #1b2a2e;
+  --ui-brand-soft-hover: #22353a;
+  --ui-brand-border: #2f4a50;
+  --ui-brand-text: #8fc6d2;
+  --ui-brand-text-strong: #cfe6ea;
+  --ui-on-brand: #0d1416;
+  --ui-brand-glow: rgba(111, 176, 190, 0.22);
+
+  --ui-danger: #e3796a;
+  --ui-danger-hover: #ef9184;
+  --ui-danger-soft: #2f1e1b;
+  --ui-danger-border: #5c332c;
+  --ui-success: #6cc39a;
+  --ui-warning: #d3a256;
+
+  --ui-bubble-bg: #1c2a2d;
+  --ui-input-bg: #182124;
+  --ui-code-bg: #141d1f;
+  --ui-code-banner: #1b2629;
+  --ui-inline-code-bg: #223032;
+  --ui-citation: #223032;
+  --ui-tag-bg: #223032;
+  --ui-toast-bg: #26353a;
+  --ui-tooltip-bg: #2a3a3e;
+  --ui-tooltip-text: #e9f1f2;
+  --ui-contrast: #e9f1f2;
+  --ui-ring: rgba(111, 176, 190, 0.36);
+
+  --ui-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.32);
+  --ui-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.36), 0 10px 24px -12px rgba(0, 0, 0, 0.5);
+  --ui-shadow-lg: 0 6px 14px rgba(0, 0, 0, 0.38), 0 26px 56px -24px rgba(0, 0, 0, 0.62);
+  --ui-shadow-input: 0 1px 2px rgba(0, 0, 0, 0.28), 0 14px 32px -18px rgba(0, 0, 0, 0.6);
+  --ui-shadow-brand: 0 8px 26px -14px rgba(0, 0, 0, 0.7);
+}
+
+/* ==========================================================================
+   静态色板（沿用原命名，重新配到青灰蓝色系）
+   ========================================================================== */
+body {
+  --dsw-static-amber-100: #fdf3e3;
+  --dsw-static-amber-400: #d8a24f;
+  --dsw-static-amber-500: #b98430;
+  --dsw-static-amber-600: #9c6d24;
+  --dsw-static-amber-900: #3a2f1d;
+
+  --dsw-static-blue-50: #edf4f5;
+  --dsw-static-blue-100: #e1ecee;
+  --dsw-static-blue-200: #cfe0e3;
+  --dsw-static-blue-300: #b3ccd1;
+  --dsw-static-blue-400: #7fa6af;
+  --dsw-static-blue-450: #5f909b;
+  --dsw-static-blue-500: #2f6b7a;
+  --dsw-static-blue-600: #285c69;
+  --dsw-static-blue-800: #1e3d45;
+  --dsw-static-blue-900: #17313a;
+
+  --dsw-static-green-100: #e6f3ed;
+  --dsw-static-green-400: #57a986;
+  --dsw-static-green-500: #2f7d5c;
+  --dsw-static-green-900: #1b3a2d;
+
+  --dsw-static-red-400: #d97564;
+  --dsw-static-red-600: #c34434;
+
+  --dsw-static-neutral-100: #f2f5f5;
+  --dsw-static-neutral-300: #d6dede;
+  --dsw-static-neutral-550: #5b6d72;
+  --dsw-static-neutral-850: #1e282b;
+
+  --dsw-static-neutral-bluish-00: #ffffff;
+  --dsw-static-neutral-bluish-50: #f7f9f9;
+  --dsw-static-neutral-bluish-60: #f3f6f6;
+  --dsw-static-neutral-bluish-75: #eef2f2;
+  --dsw-static-neutral-bluish-100: #e8edee;
+  --dsw-static-neutral-bluish-150: #e3eaea;
+  --dsw-static-neutral-bluish-200: #dbe4e5;
+  --dsw-static-neutral-bluish-300: #c6d2d3;
+  --dsw-static-neutral-bluish-400: #8fa2a6;
+  --dsw-static-neutral-bluish-600: #64777d;
+  --dsw-static-neutral-bluish-700: #45585e;
+  --dsw-static-neutral-bluish-750: #2e3f44;
+  --dsw-static-neutral-bluish-800: #243236;
+  --dsw-static-neutral-bluish-850: #1b2629;
+  --dsw-static-neutral-bluish-900: #162023;
+  --dsw-static-neutral-bluish-950: #111a1c;
+  --dsw-static-neutral-bluish-1000: #0c1416;
+}
+
+/* ==========================================================================
+   语义别名（原组件继续使用这些名字，统一指向新令牌）
+   ========================================================================== */
+body {
+  --dsw-alias-bg-base: var(--ui-bg-canvas);
+  --dsw-alias-bg-layer-2: var(--ui-bg-surface);
+  --dsw-alias-bg-layer-3: var(--ui-bg-surface);
+  --dsw-alias-bg-skeleton: rgba(18, 47, 55, 0.05);
+
+  --dsw-alias-border-inverted: transparent;
+  --dsw-alias-border-l1: var(--ui-border-subtle);
+  --dsw-alias-border-l2: var(--ui-border);
+  --dsw-alias-border-l2-darkmode-thin: var(--ui-border);
+  --dsw-alias-border-l3: var(--ui-border-strong);
+
+  --dsw-alias-brand-primary: var(--ui-brand);
+  --dsw-alias-brand-primary-invert: var(--ui-brand-text-strong);
+  --dsw-alias-brand-text: var(--ui-brand-text);
+
+  --dsw-alias-button-contrast-fill: var(--ui-contrast);
+  --dsw-alias-button-elevated-fill: var(--ui-bg-surface);
+  --dsw-alias-button-ghost-active-border: var(--ui-brand-border);
+  --dsw-alias-button-ghost-active-fill: var(--ui-brand-soft);
+  --dsw-alias-button-ghost-active-hover: var(--ui-brand-soft-hover);
+  --dsw-alias-button-primary-fill: var(--ui-brand);
+  --dsw-alias-button-primary-hover: var(--ui-brand-hover);
+  --dsw-alias-button-info-hover: var(--ui-brand-hover);
+
+  --dsw-alias-interactive-bg-active: var(--ui-bg-active);
+  --dsw-alias-interactive-bg-hover: var(--ui-bg-hover);
+  --dsw-alias-interactive-bg-hover-accent: var(--ui-bg-active-strong);
+  --dsw-alias-interactive-bg-hover-danger: rgba(195, 68, 52, 0.08);
+
+  --dsw-alias-label-caption: var(--ui-text-3);
+  --dsw-alias-label-dimmed: var(--ui-text-dim);
+  --dsw-alias-label-primary: var(--ui-text-1);
+  --dsw-alias-label-primary-foreground: var(--ui-on-brand);
+  --dsw-alias-label-primary-inverted: var(--ui-on-brand);
+  --dsw-alias-label-secondary: var(--ui-text-2);
+  --dsw-alias-label-tertiary: var(--ui-text-3);
+
+  --dsw-alias-markdown-citation: var(--ui-citation);
+  --dsw-alias-markdown-code-block: var(--ui-code-bg);
+  --dsw-alias-markdown-code-block-banner: var(--ui-code-banner);
+  --dsw-alias-markdown-inline-code: var(--ui-inline-code-bg);
+  --dsw-alias-markdown-placeholder: var(--ui-bg-subtle);
+  --dsw-alias-markdown-tag: var(--ui-tag-bg);
+
+  --dsw-alias-state-error-primary: var(--ui-danger);
+  --dsw-alias-state-error-secondary: var(--ui-danger-hover);
+
+  --dsw-alias-toast-bg: var(--ui-toast-bg);
+  --dsw-alias-tooltip-bg: var(--ui-tooltip-bg);
+
+  --dsw-specific-bubble: var(--ui-bubble-bg);
+  --dsw-specific-input-major: var(--ui-input-bg);
+  --dsw-specific-login-input: var(--ui-bg-subtle);
+  --dsw-specific-menu: var(--ui-bg-surface);
+  --dsw-specific-selector: var(--ui-bg-subtle);
+  --dsw-specific-sidebar-fill: var(--ui-bg-sidebar);
+  --dsw-specific-sidebar-nav-item-active-accent: var(--ui-brand-soft);
+  --dsw-specific-sidebar-nav-item-hover: var(--ui-bg-hover);
+
+  --dsw-shadow-lv3: var(--ui-shadow-lg);
+}
+
+body[data-ds-dark-theme] {
+  --dsw-alias-bg-skeleton: rgba(255, 255, 255, 0.07);
+  --dsw-alias-interactive-bg-hover-danger: rgba(227, 121, 106, 0.14);
+  --dsw-alias-label-primary-inverted: var(--ui-text-1);
+  --dsw-alias-label-primary-foreground: var(--ui-on-brand);
+}
+
+/* ==========================================================================
+   Markdown 排印令牌：正文行高 1.7 左右，中文字号略大更易读
+   ========================================================================== */
+body {
+  --dsw-font-markdown-h1: 700 26px/36px var(--dsw-font-family);
+  --dsw-font-markdown-h2: 700 22px/32px var(--dsw-font-family);
+  --dsw-font-markdown-h3: 600 19px/29px var(--dsw-font-family);
+  --dsw-font-markdown-h4: 600 16px/27px var(--dsw-font-family);
+
+  --dsw-font-markdown-base: 16px/27px var(--dsw-font-family);
+  --dsw-font-markdown-base-strong: 600 16px/27px var(--dsw-font-family);
+
+  --dsw-font-markdown-table: 14.5px/24px var(--dsw-font-family);
+  --dsw-font-markdown-table-head: 500 14.5px/24px var(--dsw-font-family);
+
+  --dsw-font-markdown-small: 14px/23px var(--dsw-font-family);
+  --dsw-font-markdown-small-strong: 600 14px/23px var(--dsw-font-family);
+
+  --dsw-font-markdown-code: 13.5px/22px var(--ds-font-family-code);
+  --dsw-font-markdown-code-block: 13px/22px var(--ds-font-family-code);
+
+  --dsw-font-s-strong-14: 600 14px/22px var(--dsw-font-family);
+  --dsw-font-xs-13: 13px/20px var(--dsw-font-family);
+}

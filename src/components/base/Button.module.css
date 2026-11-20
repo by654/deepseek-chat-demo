@@ -1,0 +1,104 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius-pill);
+  font: inherit;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 550;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  transition:
+    background-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    border-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    color var(--ds-transition-duration) var(--ds-ease-in-out),
+    box-shadow var(--ds-transition-duration) var(--ds-ease-in-out),
+    transform var(--ds-transition-duration) var(--ds-ease-out);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.button:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+.button:focus-visible {
+  box-shadow: 0 0 0 2px var(--ui-ring);
+}
+
+.l {
+  height: 44px;
+  padding: 0 24px;
+  font-size: 15px;
+}
+
+.m {
+  height: 38px;
+  padding: 0 18px;
+}
+
+.s {
+  height: 30px;
+  padding: 0 12px;
+  font-size: 13px;
+  gap: 4px;
+}
+
+.block {
+  display: flex;
+  width: 100%;
+}
+
+.primary {
+  border-color: transparent;
+  background: var(--ui-brand);
+  color: var(--ui-on-brand);
+  box-shadow: 0 2px 10px -4px var(--ui-brand-glow);
+}
+
+.primary:not(:disabled):hover {
+  background: var(--ui-brand-hover);
+  box-shadow: 0 4px 14px -4px var(--ui-brand-glow);
+}
+
+.outlined {
+  border-color: var(--ui-border-strong);
+  background-color: transparent;
+  color: var(--ui-text-1);
+}
+
+.outlined:not(:disabled):hover {
+  border-color: var(--ui-brand-border);
+  background-color: var(--ui-brand-soft);
+  color: var(--ui-brand-text-strong);
+}
+
+.danger {
+  border-color: transparent;
+  background-color: var(--ui-danger);
+  color: var(--ui-on-brand);
+}
+
+.danger:not(:disabled):hover {
+  background-color: var(--ui-danger-hover);
+}
+
+.dangerOutlined {
+  border-color: var(--ui-danger-border);
+  background-color: transparent;
+  color: var(--ui-danger);
+}
+
+.dangerOutlined:not(:disabled):hover {
+  border-color: var(--ui-danger);
+  background-color: var(--ui-danger-soft);
+}

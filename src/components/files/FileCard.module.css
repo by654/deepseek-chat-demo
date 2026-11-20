@@ -1,0 +1,137 @@
+.card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  width: 244px;
+  min-height: 68px;
+  /* 左右内边距统一为 14px（原本左侧 14、右侧 12），与消息气泡的 16px 网格对齐 */
+  padding: 0 14px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-m);
+  background-color: var(--ui-bg-surface);
+  cursor: default;
+  transition:
+    background-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    border-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    box-shadow var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.card > a {
+  position: absolute;
+  inset: 0;
+}
+
+.card:hover .remove {
+  opacity: 1;
+}
+
+.card:hover {
+  border-color: var(--ui-brand-border);
+  box-shadow: var(--ui-shadow-sm);
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.clickable:hover {
+  background-color: var(--ui-bg-subtle);
+}
+
+.editable {
+  padding-right: 24px;
+}
+
+.failed {
+  border-color: var(--ui-danger-border);
+  background-color: var(--ui-danger-soft);
+}
+
+.failed .subCaption {
+  color: var(--ui-danger);
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  margin-right: 10px;
+  color: var(--ui-brand-text);
+}
+
+.retry svg {
+  width: 18px;
+  height: 18px;
+  color: var(--ui-text-2);
+}
+
+.spinner {
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--ui-border);
+  border-top-color: var(--ui-brand);
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 0;
+  user-select: none;
+}
+
+.caption {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 550;
+  color: var(--ui-text-1);
+}
+
+.subCaption {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--ui-text-3);
+}
+
+.remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  color: var(--ui-on-brand);
+  background-color: var(--ui-contrast);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.invalidRemove {
+  opacity: 1;
+  color: #ffffff;
+  background-color: var(--ui-danger);
+}

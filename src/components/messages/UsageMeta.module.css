@@ -1,0 +1,60 @@
+.usage {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding-left: 2px;
+  font-size: 11.5px;
+  line-height: 16px;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ui-text-3);
+  user-select: none;
+  animation: usageIn 240ms var(--ds-ease-out) both;
+}
+
+.tokens {
+  white-space: nowrap;
+}
+
+.divider {
+  width: 1px;
+  height: 10px;
+  background-color: var(--ui-border);
+}
+
+.cost {
+  white-space: nowrap;
+  color: var(--ui-brand-text);
+}
+
+.unset {
+  white-space: nowrap;
+  color: var(--ui-text-3);
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: help;
+}
+
+@keyframes usageIn {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .usage {
+    animation: none;
+  }
+}
+
+@media not all and (min-width: 768px) {
+  .usage {
+    font-size: 11px;
+  }
+}

@@ -1,0 +1,59 @@
+.root {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  padding: 20px 20px 16px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-l);
+  background-color: var(--ui-bg-elevated);
+  box-shadow: var(--ui-shadow-l);
+  transform: translate(-50%, -50%);
+  animation: restoreIn 240ms var(--ds-ease-out) both;
+}
+
+@keyframes restoreIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 10px)) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.title {
+  color: var(--ui-text-primary);
+  font-size: calc(15px * var(--ds-font-scale-text, 100%) / 100%);
+  font-weight: 600;
+}
+
+.body {
+  color: var(--ui-text-secondary);
+  font-size: calc(13px * var(--ds-font-scale-text, 100%) / 100%);
+  line-height: 20px;
+}
+
+.session {
+  overflow: hidden;
+  padding: 8px 10px;
+  border-radius: var(--ui-radius-m);
+  background-color: var(--ui-bg-muted);
+  color: var(--ui-text-primary);
+  font-size: calc(13px * var(--ds-font-scale-text, 100%) / 100%);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+}
