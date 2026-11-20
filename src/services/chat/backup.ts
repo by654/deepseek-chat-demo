@@ -19,11 +19,14 @@ const enqueueBackup = <T>(run: () => Promise<T>): Promise<T> => {
 const backupFileName = (date: Date) => `deepseek_data-${formatDate(date)}.zip`
 
 /** 导出为历史会话导出格式的 ZIP，可再次导入。 */
-export const exportHistory = (): Promise<{ name: string; blob: Blob }> =>
+export type ProgressFn = (percent: number) => void
+
+export const exportHistory = (onProgress?: ProgressFn): Promise<{ name: string; blob: Blob }> =>
   enqueueBackup(async () => {
     // 列表和已加载内容保留导出开始时的快照；未打开的会话逐条读取，不填满详情缓存。
     const { sessions, sessionCache } = useChatStore.getState()
     async function* readSessions(): AsyncGenerator<Session> {
+      let exported = 0
       for (const summary of sessions) {
         const session = Object.hasOwn(sessionCache, summary.id)
           ? sessionCache[summary.id]
@@ -33,11 +36,14 @@ export const exportHistory = (): Promise<{ name: string; blob: Blob }> =>
         }
         // 详情读取期间可能重命名，归档标题与开始时的列表保持一致。
         yield { ...session, ...summary }
+        exported += 1
+        onProgress?.(Math.min(95, Math.round((exported / Math.max(1, sessions.length)) * 95)))
       }
     }
     const { exportArchive } = await import('./history/exportArchive.js')
     const now = new Date()
     const blob = await exportArchive(readSessions())
+    onProgress?.(100)
     return { name: backupFileName(now), blob }
   })
 
@@ -94,8 +100,10 @@ const mergeIntoStaging = async (
   snapshot: HistorySnapshot[],
   imported: ReadonlySet<string>,
   resolution: ConflictResolution,
+  onProgress?: ProgressFn,
 ): Promise<void> => {
   const stamp = Date.now().toString(36)
+  let merged = 0
   for (const { session, files } of snapshot) {
     let target = session
     if (imported.has(session.id)) {
@@ -118,6 +126,8 @@ const mergeIntoStaging = async (
     } else {
       await db.addStagingSession(target)
     }
+    merged += 1
+    onProgress?.(80 + Math.round((merged / Math.max(1, snapshot.length)) * 16))
   }
 }
 
@@ -133,20 +143,33 @@ export type ImportOptions = { mode?: ImportMode; resolution?: ConflictResolution
  * 确认后调用：先检查 ZIP 格式与版本，校验失败时保留正在生成的回答；
  * 通过后从 ZIP 流式写入暂存，成功才替换原有会话与图片原件。返回导入后的会话数。
  */
-export const importHistory = (file: File, options: ImportOptions = {}): Promise<number> =>
+export const importHistory = (
+  file: File,
+  options: ImportOptions = {},
+  onProgress?: ProgressFn,
+): Promise<number> =>
   enqueueBackup(async () => {
     const { checkArchiveFormat, importArchive } = await import('./history/importArchive.js')
+    onProgress?.(4)
     await checkArchiveFormat(file)
+    onProgress?.(10)
     if ((options.mode ?? 'replace') === 'replace') {
-      return replaceHistory(() => importArchive(file))
+      const replaced = await replaceHistory(() => importArchive(file))
+      onProgress?.(100)
+      return replaced
     }
     // 合并前先取快照与冲突清单：导入会替换本地历史，之后再读就取不到了。
     const snapshot = await snapshotHistory()
+    onProgress?.(30)
     const imported = await archiveSessionIds(file)
-    return replaceHistory(async () => {
+    onProgress?.(60)
+    const count = await replaceHistory(async () => {
       await importArchive(file)
-      await mergeIntoStaging(snapshot, imported, options.resolution ?? 'keepBoth')
+      onProgress?.(80)
+      await mergeIntoStaging(snapshot, imported, options.resolution ?? 'keepBoth', onProgress)
     })
+    onProgress?.(100)
+    return count
   })
 
 /** 确认删除后调用：以空历史原子替换全部本地会话与附件，保留 API Key 和其他设置。 */

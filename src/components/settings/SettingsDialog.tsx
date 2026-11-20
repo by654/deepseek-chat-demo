@@ -615,6 +615,24 @@ const SettingCell = ({
   )
 }
 
+/** 导入/导出进度条：仅在任务进行中显示，按百分比平滑推进 */
+const ProgressBar = ({ percent }: { percent: number }) => {
+  const value = Math.max(0, Math.min(100, Math.round(percent)))
+  return (
+    <div
+      className={styles.progressBar}
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={value}
+      data-testid="progress-bar"
+      data-percent={value}
+    >
+      <div className={styles.progressFill} style={{ width: `${value}%` }} />
+    </div>
+  )
+}
+
 /** 选文件后先提示导入方式；确认后才检查文件并执行导入，任何错误都提示导入失败。 */
 const useHistoryImport = () => {
   const [file, setFile] = useState<File | null>(null)
@@ -622,6 +640,7 @@ const useHistoryImport = () => {
   const [status, setStatus] = useState<Status>(null)
   const [mode, setMode] = useState<ImportMode>('merge')
   const [resolution, setResolution] = useState<ConflictResolution>('keepBoth')
+  const [progress, setProgress] = useState(0)
   const importing = useRef(false)
 
   const confirm = async () => {
@@ -632,13 +651,15 @@ const useHistoryImport = () => {
     setFile(null)
     setBusy(true)
     setStatus(null)
+    setProgress(0)
     try {
-      const count = await importHistory(file, { mode, resolution })
+      const count = await importHistory(file, { mode, resolution }, setProgress)
       setStatus({ key: count === 1 ? 'historyImportedOne' : 'historyImported', params: { count } })
     } catch {
       setStatus({ key: 'historyImportFailed', error: true })
     } finally {
       importing.current = false
+      setProgress(0)
       setBusy(false)
     }
   }
@@ -647,6 +668,7 @@ const useHistoryImport = () => {
     file,
     busy,
     status,
+    progress,
     mode,
     setMode,
     resolution,
@@ -669,38 +691,41 @@ const ImportHistory = ({
   const inputRef = useRef<HTMLInputElement>(null)
 
   return (
-    <SettingCell
-      label={t('historyImport')}
-      description={t('historyImportDescription')}
-      status={historyImport.status}
-      action={
-        <>
-          <Button
-            variant="outlined"
-            size="m"
-            className={clsx(styles.cellButton, styles.uploadButton)}
-            disabled={disabled}
-            onClick={() => inputRef.current?.click()}
-          >
-            <IconUploadOutline14 />
-            {t('upload')}
-          </Button>
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".zip,application/zip,application/x-zip-compressed"
-            hidden
-            onChange={(event) => {
-              const file = event.target.files?.[0]
-              event.target.value = ''
-              if (file) {
-                historyImport.select(file)
-              }
-            }}
-          />
-        </>
-      }
-    />
+    <>
+      <SettingCell
+        label={t('historyImport')}
+        description={t('historyImportDescription')}
+        status={historyImport.status}
+        action={
+          <>
+            <Button
+              variant="outlined"
+              size="m"
+              className={clsx(styles.cellButton, styles.uploadButton)}
+              disabled={disabled}
+              onClick={() => inputRef.current?.click()}
+            >
+              <IconUploadOutline14 />
+              {t('upload')}
+            </Button>
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".zip,application/zip,application/x-zip-compressed"
+              hidden
+              onChange={(event) => {
+                const file = event.target.files?.[0]
+                event.target.value = ''
+                if (file) {
+                  historyImport.select(file)
+                }
+              }}
+            />
+          </>
+        }
+      />
+      {historyImport.busy ? <ProgressBar percent={historyImport.progress} /> : null}
+    </>
   )
 }
 
@@ -710,12 +735,14 @@ const ExportHistory = ({ disabled }: { disabled: boolean }) => {
   const empty = useChatStore((state) => state.sessions.length === 0)
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState<Status>(null)
+  const [progress, setProgress] = useState(0)
 
   const onExport = async () => {
     setBusy(true)
     setStatus(null)
+    setProgress(0)
     try {
-      const { name, blob } = await exportHistory()
+      const { name, blob } = await exportHistory(setProgress)
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
@@ -725,28 +752,32 @@ const ExportHistory = ({ disabled }: { disabled: boolean }) => {
     } catch (error) {
       setStatus(errorStatus('historyExportFailed', error))
     } finally {
+      setProgress(0)
       setBusy(false)
     }
   }
 
   return (
-    <SettingCell
-      label={t('exportAllLabel')}
-      description={t('historyExportDescription')}
-      status={status}
-      action={
-        <Button
-          variant="outlined"
-          size="m"
-          className={styles.cellButton}
-          disabled={disabled || busy || empty}
-          onClick={() => void onExport()}
-        >
-          <IconDownloadOutline16 />
-          {t('exportAllDownload')}
-        </Button>
-      }
-    />
+    <>
+      <SettingCell
+        label={t('exportAllLabel')}
+        description={t('historyExportDescription')}
+        status={status}
+        action={
+          <Button
+            variant="outlined"
+            size="m"
+            className={styles.cellButton}
+            disabled={disabled || busy || empty}
+            onClick={() => void onExport()}
+          >
+            <IconDownloadOutline16 />
+            {t('exportAllDownload')}
+          </Button>
+        }
+      />
+      {busy ? <ProgressBar percent={progress} /> : null}
+    </>
   )
 }
 
