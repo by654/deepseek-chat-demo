@@ -680,3 +680,24 @@
     width: 100%;
   }
 }
+
+.importOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.importOptionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 44px;
+}
+
+.importOptionLabel {
+  color: var(--ui-text-2);
+  font-size: 14px;
+  line-height: 20px;
+}

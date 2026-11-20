@@ -171,6 +171,11 @@ export const addStagingSession = async (session: Session): Promise<void> => {
   await (await getDB()).add('sessionsStaging', session)
 }
 
+/** 写回暂存会话：同 ID 已存在时覆盖，用于合并导入时保留本地版本。 */
+export const putStagingSession = async (session: Session): Promise<void> => {
+  await (await getDB()).put('sessionsStaging', session)
+}
+
 export const saveStagingFiles = (files: StoredFile[]): Promise<void> =>
   putFiles('filesStaging', files)
 

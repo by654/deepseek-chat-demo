@@ -21,6 +21,7 @@ import {
   exportHistory,
   importHistory,
 } from '../../services/chat/backup.js'
+import type { ConflictResolution, ImportMode } from '../../services/chat/backup.js'
 import { useIsMobile } from '../../app/viewport.js'
 import { useChatStore } from '../../services/chat/store.js'
 import { regionCodes, getRegionName, provinces } from '../../services/location.js'
@@ -392,6 +393,35 @@ const ImportConfirm = ({
       }
     >
       <div className={styles.importConfirmText}>{t('historyImportConfirmDescription')}</div>
+      <div className={styles.importOptions}>
+        <div className={styles.importOptionRow}>
+          <span className={styles.importOptionLabel}>{t('historyImportModeLabel')}</span>
+          <Select
+            value={historyImport.mode}
+            ariaLabel={t('historyImportModeLabel')}
+            options={[
+              { value: 'merge', label: t('historyImportModeMerge') },
+              { value: 'replace', label: t('historyImportModeReplace') },
+            ]}
+            onChange={historyImport.setMode}
+          />
+        </div>
+        {historyImport.mode === 'merge' ? (
+          <div className={styles.importOptionRow}>
+            <span className={styles.importOptionLabel}>{t('historyImportConflictLabel')}</span>
+            <Select
+              value={historyImport.resolution}
+              ariaLabel={t('historyImportConflictLabel')}
+              options={[
+                { value: 'keepBoth', label: t('historyImportConflictBoth') },
+                { value: 'keepLocal', label: t('historyImportConflictLocal') },
+                { value: 'keepImported', label: t('historyImportConflictImported') },
+              ]}
+              onChange={historyImport.setResolution}
+            />
+          </div>
+        ) : null}
+      </div>
     </Modal>
   )
 }
@@ -585,11 +615,13 @@ const SettingCell = ({
   )
 }
 
-/** 选文件后先提示覆盖；确认后才检查文件并执行导入，任何错误都提示导入失败。 */
+/** 选文件后先提示导入方式；确认后才检查文件并执行导入，任何错误都提示导入失败。 */
 const useHistoryImport = () => {
   const [file, setFile] = useState<File | null>(null)
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState<Status>(null)
+  const [mode, setMode] = useState<ImportMode>('merge')
+  const [resolution, setResolution] = useState<ConflictResolution>('keepBoth')
   const importing = useRef(false)
 
   const confirm = async () => {
@@ -601,7 +633,7 @@ const useHistoryImport = () => {
     setBusy(true)
     setStatus(null)
     try {
-      const count = await importHistory(file)
+      const count = await importHistory(file, { mode, resolution })
       setStatus({ key: count === 1 ? 'historyImportedOne' : 'historyImported', params: { count } })
     } catch {
       setStatus({ key: 'historyImportFailed', error: true })
@@ -611,7 +643,18 @@ const useHistoryImport = () => {
     }
   }
 
-  return { file, busy, status, select: setFile, cancel: () => setFile(null), confirm }
+  return {
+    file,
+    busy,
+    status,
+    mode,
+    setMode,
+    resolution,
+    setResolution,
+    select: setFile,
+    cancel: () => setFile(null),
+    confirm,
+  }
 }
 
 /** 导入 = 覆盖：用选中文件替换本地全部会话与附件。 */
