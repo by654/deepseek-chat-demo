@@ -21,6 +21,13 @@ declare const styles: {
   readonly "themeOptionSelected": string;
   readonly "description": string;
   readonly "numberInput": string;
+  readonly "priceBlock": string;
+  readonly "priceBlockHead": string;
+  readonly "priceBlockTitle": string;
+  readonly "priceBlockUnit": string;
+  readonly "priceGrid": string;
+  readonly "priceField": string;
+  readonly "priceFieldLabel": string;
   readonly "error": string;
   readonly "apiKey": string;
   readonly "apiKeySaved": string;

@@ -1,5 +1,6 @@
 import type { MessageUsage } from '../api/types.js'
 import type { AssistantMessage } from '../chat/types.js'
+import { tokenBreakdown, type TokenBreakdown } from './pricing.js'
 
 /** 计入账单的输入 token：常规输入 + 缓存写入 + 缓存命中 */
 export const billableInput = (usage: MessageUsage): number =>
@@ -15,20 +16,29 @@ export const roundTokens = (usage: MessageUsage) => ({
 export const contextTokens = (usage: MessageUsage): number =>
   billableInput(usage) + usage.output_tokens
 
-/** 整个会话累计的输入与输出 token */
+/** 整个会话累计的用量：输入/输出/总计，并区分缓存命中与未命中 */
 export const sessionTokens = (
   messages: readonly { role: string; usage?: MessageUsage }[]
-): { input: number; output: number; total: number } => {
-  let input = 0
-  let output = 0
+): TokenBreakdown => {
+  const total: TokenBreakdown = {
+    cacheHit: 0,
+    cacheMiss: 0,
+    input: 0,
+    output: 0,
+    total: 0,
+  }
   for (const message of messages) {
     if (message.role !== 'assistant' || !message.usage) {
       continue
     }
-    input += billableInput(message.usage)
-    output += message.usage.output_tokens
+    const round = tokenBreakdown(message.usage)
+    total.cacheHit += round.cacheHit
+    total.cacheMiss += round.cacheMiss
+    total.input += round.input
+    total.output += round.output
+    total.total += round.total
   }
-  return { input, output, total: input + output }
+  return total
 }
 
 /** 最近一条带用量的回答占用的上下文长度，作为当前上下文水位 */

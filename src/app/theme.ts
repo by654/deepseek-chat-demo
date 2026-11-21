@@ -75,12 +75,24 @@ const syncAccent = (theme: Theme) => {
   applyAccent(hex, theme)
 }
 
+let appliedStyle: string | null = null
+
+/** 界面风格只切换中性色令牌，不改动明暗偏好与主色 */
+const syncStyle = () => {
+  const { themeStyle } = useSettings.getState()
+  if (themeStyle !== appliedStyle) {
+    appliedStyle = themeStyle
+    document.body.dataset.themeStyle = themeStyle
+  }
+}
+
 const syncTheme = () => {
   const theme = resolveTheme(useSettings.getState().themePreference, getOsTheme())
   if (theme !== appliedTheme) {
     appliedTheme = theme
     applyTheme(theme)
   }
+  syncStyle()
   syncAccent(theme)
 }
 

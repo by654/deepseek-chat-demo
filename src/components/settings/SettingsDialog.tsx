@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import {
   IconDarkOutline16,
   IconDataOutline16,
@@ -12,7 +12,12 @@ import {
   IconUploadOutline14,
 } from '../base/icons.js'
 import { Toggle } from '../base/Toggle.js'
-import { accentPresets, CUSTOM_PRESET_ID, presetBrand } from '../../app/presets.js'
+import {
+  accentPresets,
+  CUSTOM_PRESET_ID,
+  presetBrand,
+  themeStylePresets,
+} from '../../app/presets.js'
 import { downloadWord } from '../../services/export/wordExport.js'
 import { downloadLog } from '../../services/logs.js'
 import {
@@ -37,14 +42,16 @@ import {
   setFontThinking,
   setLocale,
   setLocation,
-  setPricingInput,
-  setPricingOutput,
+  setPricingTier,
+  setPricingValue,
+  resetPricingTable,
   setQueueEnabled,
   setQueueMode,
   setRestoreMode,
   setSystemPrompt,
   setThemePreference,
   setThemePreset,
+  setThemeStyle,
   setTtsVoice,
   setWordColor,
   setWordExportEnabled,
@@ -59,12 +66,26 @@ import { useTranslate, type TranslationKey, type TranslationMessage } from '../.
 import {
   MAX_CONTEXT_WINDOW,
   MIN_CONTEXT_WINDOW,
+  MODEL_ORDER,
   parseContextWindow,
   parsePrice,
+  type PriceTier,
+  type TierMode,
+  type TokenPrice,
 } from '../../services/usage/pricing.js'
+import { useTierMode } from '../../services/usage/usePricing.js'
+import {
+  API_CALL_KINDS,
+  API_CALL_LABELS,
+  apiCallCount,
+  apiUsageTotals,
+  resetApiUsage,
+  useApiUsage,
+} from '../../services/usage/apiUsage.js'
+import type { ChatModel } from '../../services/api/types.js'
 import { Button } from '../base/Button.js'
 import { Modal } from '../base/Modal.js'
-import { Select } from '../base/Select.js'
+import { Select, type SelectOption } from '../base/Select.js'
 import { showToast } from '../base/toastState.js'
 import { ApiKeyConfirm, ApiKeyField, useApiKeyEditor } from './ApiKeyField.js'
 import { closeSettings, useSettingsDialog, type SettingsSection } from './settingsDialogState.js'
@@ -86,6 +107,7 @@ const sections: { value: SettingsSection; label: TranslationKey; icon: ReactNode
     icon: <IconSettingsOutline16 />,
   },
   { value: 'appearance', label: 'settingsTabAppearance', icon: <IconLightOutline16 /> },
+  { value: 'usage', label: 'settingsTabUsage', icon: <IconDataOutline16 /> },
   { value: 'queue', label: 'settingsTabQueue', icon: <IconSendOutline16 /> },
   { value: 'prompt', label: 'settingsTabPrompt', icon: <IconEditOutline16 /> },
   { value: 'word', label: 'settingsTabWord', icon: <IconDownloadOutline16 /> },
@@ -117,26 +139,27 @@ const SettingsContent = () => {
           }
         }}
       >
-        <div role="tablist" className={styles.navigation}>
-          {sections.map((item) => (
-            <button
-              key={item.value}
-              type="button"
-              role="tab"
-              aria-selected={section === item.value}
-              className={clsx(styles.navItem, section === item.value && styles.navItemActive)}
-              onClick={() => setSection(item.value)}
-            >
-              {item.icon}
-              {t(item.label)}
-            </button>
-          ))}
+        <div className={styles.navWrap}>
+          <div role="tablist" className={styles.navigation}>
+            {sections.map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                role="tab"
+                aria-selected={section === item.value}
+                className={clsx(styles.navItem, section === item.value && styles.navItemActive)}
+                onClick={() => setSection(item.value)}
+              >
+                {item.icon}
+                {t(item.label)}
+              </button>
+            ))}
+          </div>
         </div>
-        <div role="tabpanel" className={styles.content}>
+        <div role="tabpanel" key={section} className={styles.content}>
           {section === 'general' ? (
             <>
               <RestoreSetting />
-              <UsageSetting />
               <LocaleSetting />
               <TtsVoiceSetting />
               <LocationSetting />
@@ -144,9 +167,15 @@ const SettingsContent = () => {
           ) : section === 'appearance' ? (
             <>
               <ThemeSetting />
+              <ThemeStyleSetting />
               <AccentSetting />
               <FontSetting />
               <FadeSetting />
+            </>
+          ) : section === 'usage' ? (
+            <>
+              <UsageSetting />
+              <ApiStatsSetting />
             </>
           ) : section === 'queue' ? (
             <QueueSetting />
@@ -478,18 +507,115 @@ const ThemeSetting = () => {
 }
 
 /**
- * 用量计费设置：token 单价与上下文窗口。
- * 单价留空表示未配置，费用显示「待配置」，不使用任何猜测价格。
+ * 界面风格：不改明暗偏好与主色，只在中性色板上切换。
+ * 卡片里用三枚色点预览背景 / 画布 / 主色，选择后由 theme.ts 同步到 body。
+ */
+const ThemeStyleSetting = () => {
+  const t = useTranslate()
+  const themeStyle = useSettings((state) => state.themeStyle)
+  const label = t('settingsThemeStyle')
+  return (
+    <div className={styles.themeStyle}>
+      <div className={styles.sectionHead}>
+        <div className={styles.label}>{label}</div>
+        <div className={styles.description}>{t('settingsThemeStyleHint')}</div>
+      </div>
+      <div role="radiogroup" aria-label={label} className={styles.styleOptions}>
+        {themeStylePresets.map((preset) => (
+          <button
+            key={preset.id}
+            type="button"
+            role="radio"
+            aria-checked={themeStyle === preset.id}
+            className={clsx(
+              styles.styleOption,
+              themeStyle === preset.id && styles.styleOptionSelected
+            )}
+            onClick={() => setThemeStyle(preset.id)}
+          >
+            <span className={styles.styleSwatches} aria-hidden>
+              {preset.swatches.map((color) => (
+                <span key={color} style={{ backgroundColor: color }} />
+              ))}
+            </span>
+            <span className={styles.styleText}>
+              <span className={styles.styleName}>{t(preset.label as TranslationKey)}</span>
+              <span className={styles.styleHint}>{t(preset.hint as TranslationKey)}</span>
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** 三个单价字段的顺序与文案 */
+const PRICE_FIELDS: { field: keyof TokenPrice; labelKey: TranslationKey }[] = [
+  { field: 'cacheHit', labelKey: 'settingsPricingCacheHit' },
+  { field: 'cacheMiss', labelKey: 'settingsPricingInput' },
+  { field: 'output', labelKey: 'settingsPricingOutput' },
+]
+
+const MODEL_LABELS: Record<ChatModel, TranslationKey> = {
+  'deepseek-flash': 'settingsPricingModelFlash',
+  'deepseek-v4-pro': 'settingsPricingModelPro',
+}
+
+/** 单个单价输入框：失焦或回车提交，留空回落官方单价 */
+const PriceField = ({
+  model,
+  tier,
+  field,
+  label,
+}: {
+  model: ChatModel
+  tier: PriceTier
+  field: keyof TokenPrice
+  label: string
+}) => {
+  const value = useSettings((state) => state.pricingTable[model][tier][field])
+  const commit = (input: string) => {
+    setPricingValue(model, tier, field, parsePrice(input))
+  }
+  return (
+    <label className={styles.priceField}>
+      <span className={styles.priceFieldLabel}>{label}</span>
+      <input
+        key={`${model}-${tier}-${field}-${value}`}
+        type="number"
+        min={0}
+        step="0.0001"
+        inputMode="decimal"
+        className={styles.numberInput}
+        aria-label={label}
+        defaultValue={value}
+        onBlur={(event) => commit(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            commit(event.currentTarget.value)
+          }
+        }}
+      />
+    </label>
+  )
+}
+
+/**
+ * 用量计费设置：按模型分闲时/高峰两档预填官方单价，可自动或手动选择档位，
+ * 另可配置上下文窗口。
  */
 const UsageSetting = () => {
   const t = useTranslate()
-  const pricingInput = useSettings((state) => state.pricingInput)
-  const pricingOutput = useSettings((state) => state.pricingOutput)
+  const { mode, tier } = useTierMode()
   const contextWindow = useSettings((state) => state.contextWindow)
 
-  const commitPrice = (value: string, apply: (price: number | null) => void) => {
-    apply(parsePrice(value))
-  }
+  const tierLabel = tier === 'peak' ? t('statusTierPeak') : t('statusTierOffpeak')
+  const tierOptions: SelectOption<TierMode>[] = [
+    { value: 'auto', label: t('settingsPricingTierAuto') },
+    { value: 'offpeak', label: t('settingsPricingTierOffpeak') },
+    { value: 'peak', label: t('settingsPricingTierPeak') },
+  ]
+
   const commitWindow = (value: string) => {
     const parsed = parseContextWindow(value)
     if (parsed !== null) {
@@ -500,49 +626,53 @@ const UsageSetting = () => {
   return (
     <>
       <SettingCell
-        label={t('settingsPricingInput')}
-        description={t('settingsPricingUnit')}
-        status={null}
+        label={t('settingsPricingTierLabel')}
+        description={t('settingsPricingTierHint')}
+        status={{ key: 'settingsPricingTierNow', params: { tier: tierLabel } }}
         action={
-          <input
-            type="number"
-            min={0}
-            step="0.0001"
-            inputMode="decimal"
-            className={styles.numberInput}
-            aria-label={t('settingsPricingInput')}
-            defaultValue={pricingInput ?? ''}
-            placeholder={t('usageCostUnset')}
-            onBlur={(event) => commitPrice(event.target.value, setPricingInput)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                commitPrice(event.currentTarget.value, setPricingInput)
-              }
-            }}
+          <Select
+            value={mode}
+            options={tierOptions}
+            onChange={setPricingTier}
+            ariaLabel={t('settingsPricingTierLabel')}
           />
         }
       />
+      {MODEL_ORDER.map((model) => (
+        <div className={styles.priceBlock} key={model}>
+          <div className={styles.priceBlockHead}>
+            <span className={styles.priceBlockTitle}>{t(MODEL_LABELS[model])}</span>
+            <span className={styles.priceBlockUnit}>
+              {t('settingsPricingUnit')} · {tierLabel}
+            </span>
+          </div>
+          <div className={styles.priceGrid}>
+            {PRICE_FIELDS.map(({ field, labelKey }) => (
+              <PriceField
+                key={field}
+                model={model}
+                tier={tier}
+                field={field}
+                label={t(labelKey)}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
       <SettingCell
-        label={t('settingsPricingOutput')}
-        description={t('settingsPricingHint')}
+        label={t('settingsPricingHint')}
+        description=""
         status={null}
         action={
-          <input
-            type="number"
-            min={0}
-            step="0.0001"
-            inputMode="decimal"
-            className={styles.numberInput}
-            aria-label={t('settingsPricingOutput')}
-            defaultValue={pricingOutput ?? ''}
-            placeholder={t('usageCostUnset')}
-            onBlur={(event) => commitPrice(event.target.value, setPricingOutput)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                commitPrice(event.currentTarget.value, setPricingOutput)
-              }
+          <Button
+            variant="outlined"
+            onClick={() => {
+              resetPricingTable()
+              showToast({ key: 'settingsPricingResetDone' })
             }}
-          />
+          >
+            {t('settingsPricingReset')}
+          </Button>
         }
       />
       <SettingCell
@@ -569,6 +699,100 @@ const UsageSetting = () => {
         }
       />
     </>
+  )
+}
+
+/** 统计时间只展示到分钟，避免设置页出现过长的本地化字符串 */
+const formatStatTime = (time: number): string =>
+  new Date(time).toLocaleString(undefined, {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+
+/**
+ * API 调用统计：按接口列出次数与失败次数。
+ * 只有对话接口按 token 计费，余额、语音与文件接口未单列费用，不用推测值填充。
+ */
+const ApiStatsSetting = () => {
+  const t = useTranslate()
+  const usage = useApiUsage()
+  const totals = apiUsageTotals(usage)
+  const otherKinds = API_CALL_KINDS.filter((kind) => kind !== 'chat')
+  return (
+    <div className={styles.apiStats}>
+      <div className={styles.apiStatsHead}>
+        <div className={styles.text}>
+          <div className={styles.label}>{t('settingsApiStatsGroup')}</div>
+          <div className={styles.description}>{t('settingsApiStatsHint')}</div>
+        </div>
+        <Button
+          variant="outlined"
+          size="m"
+          className={styles.cellButton}
+          onClick={() => {
+            resetApiUsage()
+            showToast({ key: 'settingsApiStatsResetDone' })
+          }}
+        >
+          {t('settingsApiStatsReset')}
+        </Button>
+      </div>
+      <div className={styles.apiStatGrid}>
+        <div className={styles.apiStat}>
+          <span className={styles.apiStatLabel}>{t('settingsApiStatsTotal')}</span>
+          <span className={styles.apiStatValue}>{totals.total}</span>
+        </div>
+        <div className={styles.apiStat}>
+          <span className={styles.apiStatLabel}>{t('settingsApiStatsFailures')}</span>
+          <span className={clsx(styles.apiStatValue, totals.failures > 0 && styles.error)}>
+            {totals.failures}
+          </span>
+        </div>
+        <div className={styles.apiStat}>
+          <span className={styles.apiStatLabel}>{t('settingsApiStatsChat')}</span>
+          <span className={styles.apiStatValue}>{apiCallCount(usage, 'chat')}</span>
+        </div>
+        <div className={styles.apiStat}>
+          <span className={styles.apiStatLabel}>{t('settingsApiStatsOther')}</span>
+          <span className={styles.apiStatValue}>{totals.other}</span>
+        </div>
+      </div>
+      <div className={styles.apiCallList}>
+        {otherKinds.map((kind) => {
+          const count = apiCallCount(usage, kind)
+          const failures = usage.calls[kind].failure
+          const extra =
+            kind === 'tts' && usage.ttsChars > 0
+              ? t('statusChars', { count: usage.ttsChars })
+              : kind === 'asr' && usage.asrSeconds > 0
+                ? t('statusSeconds', { count: usage.asrSeconds })
+                : ''
+          return (
+            <div className={styles.apiCallRow} key={kind}>
+              <span>{t(API_CALL_LABELS[kind])}</span>
+              <span className={styles.apiCallValue}>
+                {t('statusCalls', { count })}
+                {extra ? ` · ${extra}` : ''}
+                {failures > 0 ? (
+                  <span className={styles.error}> {t('statusFailures', { count: failures })}</span>
+                ) : null}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+      <div className={styles.apiMeta}>
+        <span>{t('settingsApiStatsSince', { time: formatStatTime(usage.since) })}</span>
+        {usage.lastAt ? (
+          <span>{t('settingsApiStatsLast', { time: formatStatTime(usage.lastAt) })}</span>
+        ) : null}
+        <span>
+          {t('settingsApiStatsOtherCost')}：{t('settingsApiStatsNoCost')}
+        </span>
+      </div>
+    </div>
   )
 }
 
@@ -782,11 +1006,88 @@ const ExportHistory = ({ disabled }: { disabled: boolean }) => {
 }
 
 
+/** 只接受 6 位十六进制颜色；返回统一的小写 #rrggbb */
+const normalizeHexColor = (value: string): string | null => {
+  const match = /^#?([0-9a-f]{6})$/i.exec(value.trim())
+  return match ? `#${match[1].toLowerCase()}` : null
+}
+
+/**
+ * 自定义颜色的文本输入：只用输入框与预览色块，不调用浏览器取色器 API。
+ * 回车或失焦时校验并提交，非法值保留原文并给出提示。
+ */
+const ColorField = ({
+  value,
+  label,
+  onCommit,
+}: {
+  value: string
+  label: string
+  onCommit: (value: string) => void
+}) => {
+  const t = useTranslate()
+  const [draft, setDraft] = useState(value)
+  const [invalid, setInvalid] = useState(false)
+
+  useEffect(() => {
+    setDraft(value)
+    setInvalid(false)
+  }, [value])
+
+  const commit = () => {
+    const hex = normalizeHexColor(draft)
+    if (!hex) {
+      setInvalid(true)
+      return
+    }
+    setDraft(hex)
+    setInvalid(false)
+    onCommit(hex)
+  }
+
+  return (
+    <div className={styles.colorFieldWrap}>
+      <div className={clsx(styles.colorField, invalid && styles.colorFieldInvalid)}>
+        <span
+          className={styles.colorPreview}
+          style={{ backgroundColor: normalizeHexColor(draft) ?? value }}
+          aria-hidden
+        />
+        <input
+          className={styles.colorText}
+          type="text"
+          value={draft}
+          aria-label={label}
+          aria-invalid={invalid}
+          spellCheck={false}
+          autoComplete="off"
+          placeholder="#4d6bfe"
+          onChange={(event) => {
+            setDraft(event.target.value)
+            setInvalid(false)
+          }}
+          onBlur={commit}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault()
+              commit()
+            }
+          }}
+        />
+      </div>
+      <div className={clsx(styles.colorHint, invalid && styles.error)}>
+        {invalid ? t('settingsColorInvalid') : t('settingsColorHint')}
+      </div>
+    </div>
+  )
+}
+
 /** 主色预设：选中即写回设置，由 theme.ts 的订阅派生整套品牌令牌 */
 const AccentSetting = () => {
   const t = useTranslate()
   const themePreset = useSettings((state) => state.themePreset)
   const customBrand = useSettings((state) => state.customBrand)
+  const customValue = customBrand ?? presetBrand(CUSTOM_PRESET_ID)
   return (
     <div className={styles.accent}>
       <div className={styles.label}>{t('settingsAccent')}</div>
@@ -807,28 +1108,34 @@ const AccentSetting = () => {
             {t(preset.label as TranslationKey)}
           </button>
         ))}
-        <label
+        <button
+          type="button"
+          role="radio"
+          aria-checked={themePreset === CUSTOM_PRESET_ID}
           className={clsx(
             styles.accentOption,
             themePreset === CUSTOM_PRESET_ID && styles.accentOptionSelected
           )}
+          onClick={() => setThemePreset(CUSTOM_PRESET_ID)}
         >
-          <span
-            className={styles.swatch}
-            style={{ backgroundColor: customBrand ?? presetBrand(CUSTOM_PRESET_ID) }}
-          />
+          <span className={styles.swatch} style={{ backgroundColor: customValue }} />
           {t('settingsAccentCustom')}
-          <input
-            type="color"
-            className={styles.colorInput}
-            aria-label={t('settingsAccentCustom')}
-            value={customBrand ?? presetBrand(CUSTOM_PRESET_ID)}
-            onChange={(event) => {
-              setCustomBrand(event.target.value)
-              setThemePreset(CUSTOM_PRESET_ID)
-            }}
-          />
-        </label>
+        </button>
+      </div>
+      <div
+        className={clsx(
+          styles.customColor,
+          themePreset === CUSTOM_PRESET_ID && styles.customColorActive
+        )}
+      >
+        <ColorField
+          value={customValue}
+          label={t('settingsAccentCustom')}
+          onCommit={(hex) => {
+            setCustomBrand(hex)
+            setThemePreset(CUSTOM_PRESET_ID)
+          }}
+        />
       </div>
     </div>
   )
@@ -1100,13 +1407,7 @@ const WordSetting = () => {
         label={t('settingsWordColor')}
         status={null}
         action={
-          <input
-            type="color"
-            className={styles.colorInput}
-            aria-label={t('settingsWordColor')}
-            value={wordColor}
-            onChange={(event) => setWordColor(event.target.value)}
-          />
+          <ColorField value={wordColor} label={t('settingsWordColor')} onCommit={setWordColor} />
         }
       />
       <SettingCell
@@ -1126,7 +1427,7 @@ const WordSetting = () => {
                   fontFamily: wordFontFamily,
                   color: wordColor,
                   withMeta: true,
-                  baseName: 'DeepSeek-sample',
+                  baseName: 'DeepSeek美化版-示例',
                 }
               )
               showToast(t('exportWordDone', { name }))

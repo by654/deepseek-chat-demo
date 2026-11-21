@@ -54,25 +54,25 @@
 body {
   color-scheme: light;
 
-  --ui-bg-app: #eff3f3;
-  --ui-bg-sidebar: #eff3f3;
-  --ui-bg-canvas: #fbfcfc;
+  --ui-bg-app: #edf1f5;
+  --ui-bg-sidebar: #f7f9fb;
+  --ui-bg-canvas: #ffffff;
   --ui-bg-surface: #ffffff;
   --ui-bg-elevated: #ffffff;
-  --ui-bg-subtle: #eaf0f0;
-  --ui-overlay: rgba(12, 24, 28, 0.34);
-  --ui-bg-hover: rgba(18, 47, 55, 0.055);
-  --ui-bg-active: rgba(18, 47, 55, 0.095);
-  --ui-bg-active-strong: rgba(18, 47, 55, 0.14);
+  --ui-bg-subtle: #f1f4f7;
+  --ui-overlay: rgba(15, 23, 42, 0.36);
+  --ui-bg-hover: rgba(18, 40, 60, 0.055);
+  --ui-bg-active: rgba(18, 40, 60, 0.09);
+  --ui-bg-active-strong: rgba(18, 40, 60, 0.14);
 
-  --ui-border-subtle: rgba(18, 47, 55, 0.06);
-  --ui-border: rgba(18, 47, 55, 0.1);
-  --ui-border-strong: rgba(18, 47, 55, 0.16);
+  --ui-border-subtle: rgba(18, 40, 60, 0.07);
+  --ui-border: rgba(18, 40, 60, 0.11);
+  --ui-border-strong: rgba(18, 40, 60, 0.18);
 
-  --ui-text-1: #16262b;
-  --ui-text-2: #45585e;
-  --ui-text-3: #64777d;
-  --ui-text-dim: #b9c8ca;
+  --ui-text-1: #172027;
+  --ui-text-2: #46535d;
+  --ui-text-3: #66747f;
+  --ui-text-dim: #b9c3cb;
 
   --ui-brand: #2f6b7a;
   --ui-brand-hover: #275a67;
@@ -91,13 +91,13 @@ body {
   --ui-success: #2f7d5c;
   --ui-warning: #a97318;
 
-  --ui-bubble-bg: #e8f0f1;
+  --ui-bubble-bg: #eef2f6;
   --ui-input-bg: #ffffff;
-  --ui-code-bg: #f5f8f8;
-  --ui-code-banner: #eef3f3;
-  --ui-inline-code-bg: #edf2f2;
-  --ui-citation: #e8eded;
-  --ui-tag-bg: #edf2f2;
+  --ui-code-bg: #f5f7f9;
+  --ui-code-banner: #eef2f5;
+  --ui-inline-code-bg: #eef2f5;
+  --ui-citation: #eef2f5;
+  --ui-tag-bg: #eef2f5;
   --ui-toast-bg: #26353a;
   --ui-tooltip-bg: #1f2c30;
   --ui-tooltip-text: #f4f8f8;
@@ -115,12 +115,12 @@ body {
 body[data-ds-dark-theme] {
   color-scheme: dark;
 
-  --ui-bg-app: #0f1517;
-  --ui-bg-sidebar: #0f1517;
-  --ui-bg-canvas: #121a1c;
-  --ui-bg-surface: #182124;
-  --ui-bg-elevated: #1b2528;
-  --ui-bg-subtle: #1e282b;
+  --ui-bg-app: #0d1113;
+  --ui-bg-sidebar: #141a1c;
+  --ui-bg-canvas: #181f21;
+  --ui-bg-surface: #1d2528;
+  --ui-bg-elevated: #222b2e;
+  --ui-bg-subtle: #253033;
   --ui-overlay: rgba(0, 0, 0, 0.58);
   --ui-bg-hover: rgba(255, 255, 255, 0.06);
   --ui-bg-active: rgba(255, 255, 255, 0.1);
@@ -170,6 +170,217 @@ body[data-ds-dark-theme] {
   --ui-shadow-lg: 0 6px 14px rgba(0, 0, 0, 0.38), 0 26px 56px -24px rgba(0, 0, 0, 0.62);
   --ui-shadow-input: 0 1px 2px rgba(0, 0, 0, 0.28), 0 14px 32px -18px rgba(0, 0, 0, 0.6);
   --ui-shadow-brand: 0 8px 26px -14px rgba(0, 0, 0, 0.7);
+}
+
+/* ==========================================================================
+   界面风格：只覆盖中性色板，主色与明暗偏好保持独立
+   - official：贴近 DeepSeek 官方聊天的蓝白纸感
+   - slate：带轻微青调的板岩灰
+   - warm：暖砂纸张
+   - graphite：纯中性石墨
+   ========================================================================== */
+
+body[data-theme-style='official'] {
+  --ui-bg-app: #edf1f8;
+  --ui-bg-sidebar: #f8faff;
+  --ui-bg-canvas: #ffffff;
+  --ui-bg-surface: #ffffff;
+  --ui-bg-elevated: #ffffff;
+  --ui-bg-subtle: #f2f5fa;
+  --ui-overlay: rgba(15, 23, 42, 0.4);
+  --ui-bg-hover: rgba(37, 60, 120, 0.055);
+  --ui-bg-active: rgba(37, 60, 120, 0.09);
+  --ui-bg-active-strong: rgba(37, 60, 120, 0.14);
+
+  --ui-border-subtle: rgba(37, 50, 80, 0.06);
+  --ui-border: rgba(37, 50, 80, 0.1);
+  --ui-border-strong: rgba(37, 50, 80, 0.17);
+
+  --ui-text-1: #1a1f2b;
+  --ui-text-2: #4b5364;
+  --ui-text-3: #6c7485;
+  --ui-text-dim: #b9c0cf;
+
+  --ui-bubble-bg: #eff2ff;
+  --ui-input-bg: #ffffff;
+  --ui-code-bg: #f6f8fc;
+  --ui-code-banner: #eef2f9;
+  --ui-inline-code-bg: #f0f3f9;
+  --ui-citation: #eef1f7;
+  --ui-tag-bg: #f0f3f9;
+  --ui-contrast: #1f2533;
+  --ui-toast-bg: #1f2533;
+  --ui-tooltip-bg: #1f2533;
+
+  --ui-shadow-sm: 0 1px 2px rgba(23, 35, 70, 0.05), 0 1px 1px rgba(23, 35, 70, 0.03);
+  --ui-shadow-md: 0 2px 6px rgba(23, 35, 70, 0.06), 0 10px 24px -10px rgba(23, 35, 70, 0.14);
+  --ui-shadow-lg: 0 4px 12px rgba(23, 35, 70, 0.07), 0 26px 56px -24px rgba(23, 35, 70, 0.26);
+  --ui-shadow-input: 0 1px 2px rgba(23, 35, 70, 0.04), 0 14px 32px -16px rgba(23, 35, 70, 0.2);
+}
+
+body[data-theme-style='official'][data-ds-dark-theme] {
+  --ui-bg-app: #15171a;
+  --ui-bg-sidebar: #1a1c20;
+  --ui-bg-canvas: #232529;
+  --ui-bg-surface: #282a2f;
+  --ui-bg-elevated: #2a2c31;
+  --ui-bg-subtle: #2d2f35;
+  --ui-overlay: rgba(0, 0, 0, 0.62);
+  --ui-bg-hover: rgba(255, 255, 255, 0.06);
+  --ui-bg-active: rgba(255, 255, 255, 0.1);
+  --ui-bg-active-strong: rgba(255, 255, 255, 0.16);
+
+  --ui-border-subtle: rgba(255, 255, 255, 0.06);
+  --ui-border: rgba(255, 255, 255, 0.1);
+  --ui-border-strong: rgba(255, 255, 255, 0.17);
+
+  --ui-text-1: #e9eaee;
+  --ui-text-2: #b6bac4;
+  --ui-text-3: #8c92a0;
+  --ui-text-dim: #454a55;
+
+  --ui-bubble-bg: #2b3040;
+  --ui-input-bg: #26282c;
+  --ui-code-bg: #1c1e22;
+  --ui-code-banner: #26282c;
+  --ui-inline-code-bg: #303238;
+  --ui-citation: #303238;
+  --ui-tag-bg: #303238;
+  --ui-contrast: #e9eaee;
+  --ui-toast-bg: #2a2c31;
+  --ui-tooltip-bg: #2f3138;
+}
+
+body[data-theme-style='warm'] {
+  --ui-bg-app: #f0ebe2;
+  --ui-bg-sidebar: #f9f6f0;
+  --ui-bg-canvas: #fdfbf7;
+  --ui-bg-surface: #fffefb;
+  --ui-bg-elevated: #fffefb;
+  --ui-bg-subtle: #f3eee5;
+  --ui-overlay: rgba(44, 36, 24, 0.38);
+  --ui-bg-hover: rgba(64, 52, 36, 0.055);
+  --ui-bg-active: rgba(64, 52, 36, 0.09);
+  --ui-bg-active-strong: rgba(64, 52, 36, 0.14);
+
+  --ui-border-subtle: rgba(64, 52, 36, 0.07);
+  --ui-border: rgba(64, 52, 36, 0.12);
+  --ui-border-strong: rgba(64, 52, 36, 0.2);
+
+  --ui-text-1: #2b241b;
+  --ui-text-2: #5d5346;
+  --ui-text-3: #7d7264;
+  --ui-text-dim: #c9c0b2;
+
+  --ui-bubble-bg: #f1ebe0;
+  --ui-input-bg: #fffefb;
+  --ui-code-bg: #f7f2e9;
+  --ui-code-banner: #f2ece1;
+  --ui-inline-code-bg: #f2ece1;
+  --ui-citation: #f0eade;
+  --ui-tag-bg: #f2ece1;
+  --ui-contrast: #2b241b;
+  --ui-toast-bg: #332b21;
+  --ui-tooltip-bg: #332b21;
+}
+
+body[data-theme-style='warm'][data-ds-dark-theme] {
+  --ui-bg-app: #15120e;
+  --ui-bg-sidebar: #1a1612;
+  --ui-bg-canvas: #211d17;
+  --ui-bg-surface: #26211a;
+  --ui-bg-elevated: #2b251d;
+  --ui-bg-subtle: #2f2921;
+  --ui-overlay: rgba(0, 0, 0, 0.6);
+  --ui-bg-hover: rgba(255, 244, 225, 0.06);
+  --ui-bg-active: rgba(255, 244, 225, 0.1);
+  --ui-bg-active-strong: rgba(255, 244, 225, 0.16);
+
+  --ui-border-subtle: rgba(255, 244, 225, 0.06);
+  --ui-border: rgba(255, 244, 225, 0.1);
+  --ui-border-strong: rgba(255, 244, 225, 0.17);
+
+  --ui-text-1: #f1e9dc;
+  --ui-text-2: #c5b9a8;
+  --ui-text-3: #9c9080;
+  --ui-text-dim: #4b4237;
+
+  --ui-bubble-bg: #2e2820;
+  --ui-input-bg: #26211a;
+  --ui-code-bg: #1a1611;
+  --ui-code-banner: #26211a;
+  --ui-inline-code-bg: #332c23;
+  --ui-citation: #332c23;
+  --ui-tag-bg: #332c23;
+  --ui-contrast: #f1e9dc;
+  --ui-toast-bg: #2e2820;
+  --ui-tooltip-bg: #352e24;
+}
+
+body[data-theme-style='graphite'] {
+  --ui-bg-app: #f1f1f2;
+  --ui-bg-sidebar: #fafafa;
+  --ui-bg-canvas: #ffffff;
+  --ui-bg-surface: #ffffff;
+  --ui-bg-elevated: #ffffff;
+  --ui-bg-subtle: #f4f4f5;
+  --ui-overlay: rgba(17, 17, 20, 0.38);
+  --ui-bg-hover: rgba(24, 24, 27, 0.055);
+  --ui-bg-active: rgba(24, 24, 27, 0.09);
+  --ui-bg-active-strong: rgba(24, 24, 27, 0.14);
+
+  --ui-border-subtle: rgba(24, 24, 27, 0.07);
+  --ui-border: rgba(24, 24, 27, 0.11);
+  --ui-border-strong: rgba(24, 24, 27, 0.18);
+
+  --ui-text-1: #18181b;
+  --ui-text-2: #52525b;
+  --ui-text-3: #71717a;
+  --ui-text-dim: #c4c4cc;
+
+  --ui-bubble-bg: #f0f0f2;
+  --ui-input-bg: #ffffff;
+  --ui-code-bg: #f6f6f7;
+  --ui-code-banner: #efeff1;
+  --ui-inline-code-bg: #f0f0f2;
+  --ui-citation: #f0f0f2;
+  --ui-tag-bg: #f0f0f2;
+  --ui-contrast: #18181b;
+  --ui-toast-bg: #242427;
+  --ui-tooltip-bg: #242427;
+}
+
+body[data-theme-style='graphite'][data-ds-dark-theme] {
+  --ui-bg-app: #101012;
+  --ui-bg-sidebar: #171718;
+  --ui-bg-canvas: #1d1d20;
+  --ui-bg-surface: #232326;
+  --ui-bg-elevated: #27272b;
+  --ui-bg-subtle: #2b2b2f;
+  --ui-overlay: rgba(0, 0, 0, 0.62);
+  --ui-bg-hover: rgba(255, 255, 255, 0.06);
+  --ui-bg-active: rgba(255, 255, 255, 0.1);
+  --ui-bg-active-strong: rgba(255, 255, 255, 0.16);
+
+  --ui-border-subtle: rgba(255, 255, 255, 0.06);
+  --ui-border: rgba(255, 255, 255, 0.1);
+  --ui-border-strong: rgba(255, 255, 255, 0.17);
+
+  --ui-text-1: #ececee;
+  --ui-text-2: #b4b4bb;
+  --ui-text-3: #8b8b93;
+  --ui-text-dim: #44444c;
+
+  --ui-bubble-bg: #2b2b30;
+  --ui-input-bg: #232326;
+  --ui-code-bg: #19191c;
+  --ui-code-banner: #232326;
+  --ui-inline-code-bg: #2f2f34;
+  --ui-citation: #2f2f34;
+  --ui-tag-bg: #2f2f34;
+  --ui-contrast: #ececee;
+  --ui-toast-bg: #2b2b30;
+  --ui-tooltip-bg: #303035;
 }
 
 /* ==========================================================================
@@ -229,6 +440,18 @@ body {
    语义别名（原组件继续使用这些名字，统一指向新令牌）
    ========================================================================== */
 body {
+  /* 兼容层：旧组件里使用的非标准令牌名统一指向现有语义色，避免浏览器回落成透明或纯黑 */
+  --ui-text-primary: var(--ui-text-1);
+  --ui-text-secondary: var(--ui-text-2);
+  --ui-text-tertiary: var(--ui-text-3);
+  --ui-text-4: var(--ui-text-3);
+  --ui-bg-muted: var(--ui-bg-subtle);
+  --ui-bg: var(--ui-input-bg);
+  --ui-brand-weak: var(--ui-brand-soft);
+  --ui-shadow-l: var(--ui-shadow-lg);
+  --ui-shadow-m: var(--ui-shadow-md);
+  --ui-shadow-popover: var(--ui-shadow-lg);
+
   --dsw-alias-bg-base: var(--ui-bg-canvas);
   --dsw-alias-bg-layer-2: var(--ui-bg-surface);
   --dsw-alias-bg-layer-3: var(--ui-bg-surface);

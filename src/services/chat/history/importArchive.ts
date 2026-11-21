@@ -60,11 +60,15 @@ export const checkArchiveFormat = async (file: File): Promise<void> => {
   }
   try {
     for await (const entry of readArchive(file)) {
-      if (entry.path !== MANIFEST_PATH) {
-        fail('backupUnrecognized')
+      if (entry.path === MANIFEST_PATH) {
+        checkManifest(await readJson(entry))
+        return
       }
-      checkManifest(await readJson(entry))
-      return
+      // 官方新版归档可能不再写 manifest，首个条目直接是会话或用户文件时同样视为可用
+      if (parseSessionPath(entry.path) !== null || entry.path === USER_PATH) {
+        return
+      }
+      fail('backupUnrecognized')
     }
   } catch (error) {
     throw error instanceof ArchiveError ? new BackupError('backupIncomplete') : error
@@ -106,12 +110,15 @@ export const importArchive = async (file: File): Promise<void> => {
       const { path } = entry
       const sessionId = parseSessionPath(path)
       if (!manifest) {
-        if (path !== MANIFEST_PATH) {
-          fail('backupUnrecognized')
+        // manifest 可缺省：新版官方归档以会话文件开头，旧版用该文件标记格式版本
+        if (path === MANIFEST_PATH) {
+          checkManifest(await readJson(entry))
+          manifest = true
+          continue
         }
-        checkManifest(await readJson(entry))
         manifest = true
-      } else if (path === USER_PATH && !index && imported.size === 0) {
+      }
+      if (path === USER_PATH && !index && imported.size === 0) {
         // 账号信息（已脱敏）不导入；文件可能缺失。
         await skipEntry(entry)
       } else if (sessionId !== null && !index) {

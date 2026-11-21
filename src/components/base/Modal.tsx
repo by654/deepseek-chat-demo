@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslate } from '../../i18n/index.js'
 import { IconCloseOutline16 } from './icons.js'
@@ -33,28 +33,58 @@ export const Modal = ({
   const titleId = useId()
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
+  // 关闭前先播放退场动画；父组件若因忙碌拒绝关闭，短暂后恢复可交互状态
+  const [closing, setClosing] = useState(false)
+  const closingRef = useRef(false)
+  const timers = useRef<number[]>([])
+
+  const requestClose = () => {
+    if (closingRef.current) {
+      return
+    }
+    closingRef.current = true
+    setClosing(true)
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const duration = reduced ? 40 : 160
+    timers.current.push(
+      window.setTimeout(() => {
+        onCloseRef.current()
+        timers.current.push(
+          window.setTimeout(() => {
+            closingRef.current = false
+            setClosing(false)
+          }, 60)
+        )
+      }, duration)
+    )
+  }
+
   useEffect(() => {
     const token = {}
     openModals.push(token)
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && openModals.at(-1) === token) {
-        onCloseRef.current()
+        requestClose()
       }
     }
     document.addEventListener('keydown', onKeyDown)
     return () => {
       openModals.splice(openModals.indexOf(token), 1)
       document.removeEventListener('keydown', onKeyDown)
+      for (const timer of timers.current) {
+        window.clearTimeout(timer)
+      }
+      timers.current = []
     }
   }, [])
 
   return createPortal(
     <div
-      className={styles.overlay}
-      onMouseDown={(event) => event.target === event.currentTarget && onClose()}
+      className={clsx(styles.overlay, closing && styles.overlayClosing)}
+      onMouseDown={(event) => event.target === event.currentTarget && requestClose()}
     >
       <div
-        className={clsx(styles.content, className)}
+        className={clsx(styles.content, className, closing && styles.contentClosing)}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
@@ -69,7 +99,7 @@ export const Modal = ({
               tone="primary"
               icon={<IconCloseOutline16 />}
               aria-label={t('close')}
-              onClick={onClose}
+              onClick={requestClose}
             />
           ) : null}
         </div>

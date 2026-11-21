@@ -1,7 +1,7 @@
-/* 阅读宽度：正文列 780px，落在 760–820px 舒适区间 */
+/* 阅读宽度：正文列 820px，接近 DeepSeek 官方聊天的留白比例 */
 :root {
-  --message-list-max-width: 860px;
-  --message-list-padding-horizontal: 40px;
+  --message-list-max-width: 820px;
+  --message-list-padding-horizontal: 36px;
 }
 
 @media (max-width: 1023px) {
@@ -39,8 +39,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 
-  --scroll-color: rgba(18, 47, 55, 0.14);
-  --scroll-color-hover: rgba(18, 47, 55, 0.26);
+  --scroll-color: var(--ui-border-strong);
+  --scroll-color-hover: var(--ui-text-3);
 }
 
 body.dark {
@@ -48,8 +48,8 @@ body.dark {
 }
 
 body[data-ds-dark-theme] {
-  --scroll-color: rgba(255, 255, 255, 0.16);
-  --scroll-color-hover: rgba(255, 255, 255, 0.28);
+  --scroll-color: var(--ui-border-strong);
+  --scroll-color-hover: var(--ui-text-3);
 }
 
 /* 主题切换瞬间关闭所有过渡，避免颜色插值闪烁 */

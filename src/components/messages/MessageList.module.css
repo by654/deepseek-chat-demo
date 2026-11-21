@@ -1,15 +1,22 @@
+/*
+ * 消息区与输入区分栏：输入区在滚动区之外占据自己的高度，
+ * 因此聊天框向上展开时只会压缩消息区，不会盖住消息内容。
+ */
 .container {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  scrollbar-gutter: stable both-edges;
-  scrollbar-color: var(--scroll-color) transparent;
+  overflow: hidden;
 }
 
 .scroll {
-  display: contents;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable both-edges;
+  scrollbar-color: var(--scroll-color) transparent;
 }
 
 .column {
@@ -20,19 +27,8 @@
 }
 
 @media not all and (min-width: 768px) {
-  .container {
-    overflow: hidden;
-    scrollbar-gutter: auto;
-  }
-
   .scroll {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
-    scrollbar-color: var(--scroll-color) transparent;
+    scrollbar-gutter: auto;
   }
 
   .column {

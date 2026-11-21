@@ -40,6 +40,7 @@ import { ACCEPT, useUploads } from '../../services/attachments.js'
 import { DraftAttachments } from './DraftAttachments.js'
 import { BalanceButton } from './BalanceButton.js'
 import { ModelPicker } from './ModelPicker.js'
+import { QuickPanel } from './QuickPanel.js'
 import { useVoiceInput } from './useVoiceInput.js'
 import { VoiceButton } from './VoiceButton.js'
 import { Spectrum } from './Spectrum.js'
@@ -301,8 +302,13 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
           </Tooltip>
         </div>
         <div className={styles.right}>
-          <ModelPicker sessionId={sessionId} />
-          <BalanceButton />
+          {/* 窄屏把模型与余额收进箭头面板，避免小号屏幕上控件互相挤压 */}
+          {isMobile ? null : (
+            <>
+              <ModelPicker sessionId={sessionId} />
+              <BalanceButton />
+            </>
+          )}
           <VoiceButton
             status={voice.status}
             disabled={!voice.available}
@@ -335,6 +341,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
               event.target.value = ''
             }}
           />
+          {isMobile ? <QuickPanel sessionId={sessionId} /> : null}
           {streaming && sessionId ? (
             <>
               {/* 输出期间仍可把新消息排进队列，本轮结束后依次自动发送 */}

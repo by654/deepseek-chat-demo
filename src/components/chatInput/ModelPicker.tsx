@@ -7,7 +7,7 @@ import type { ChatModel } from '../../services/api/types.js'
 import { useTranslate, type TranslationKey } from '../../i18n/index.js'
 import styles from './ModelPicker.module.css'
 
-type ModelMeta = {
+export type ModelMeta = {
   value: ChatModel
   /** 完整名称，用于菜单与无障碍标签 */
   label: TranslationKey
@@ -15,7 +15,8 @@ type ModelMeta = {
   short: string
 }
 
-const MODELS: ModelMeta[] = [
+/** 模型清单与设置里的单价表顺序保持一致，供窄屏工具面板复用 */
+export const MODELS: ModelMeta[] = [
   { value: 'deepseek-flash', label: 'modelFlash', short: 'Flash' },
   { value: 'deepseek-v4-pro', label: 'modelPro', short: 'V4 Pro' },
 ]

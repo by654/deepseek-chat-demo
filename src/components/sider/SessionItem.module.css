@@ -22,18 +22,6 @@
   font-weight: 550;
 }
 
-.item.active::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 3px;
-  width: 3px;
-  height: 16px;
-  border-radius: var(--ui-radius-pill);
-  background-color: var(--ui-brand);
-  transform: translateY(-50%);
-}
-
 .item:not(.active):hover {
   background-color: var(--dsw-specific-sidebar-nav-item-hover);
   color: var(--ui-text-1);

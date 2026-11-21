@@ -58,13 +58,21 @@
 }
 
 .appName::before {
-  content: '';
+  content: 'D';
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
   background: linear-gradient(135deg, var(--ui-brand) 0%, var(--ui-brand-text) 100%);
-  box-shadow: 0 0 0 3px var(--ui-brand-soft);
+  box-shadow: 0 3px 10px -4px var(--ui-brand-glow);
+  color: var(--ui-on-brand);
+  font-size: 15px;
+  line-height: 1;
+  font-weight: 750;
+  letter-spacing: 0;
 }
 
 .newChat {
@@ -77,10 +85,10 @@
   width: 100%;
   height: 42px;
   padding: 0 16px;
-  border: 1px solid var(--ui-brand-border);
+  border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius-pill);
-  background: var(--ui-brand-soft);
-  color: var(--ui-brand-text-strong);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text-1);
   font: inherit;
   font-size: 14px;
   font-weight: 600;
@@ -96,8 +104,8 @@
 }
 
 .newChat:hover {
-  border-color: var(--ui-brand);
-  background: var(--ui-brand-soft-hover);
+  border-color: var(--ui-brand-border);
+  background: var(--ui-brand-soft);
   box-shadow: var(--ui-shadow-sm);
 }
 
@@ -112,6 +120,7 @@
 .newChatIcon {
   display: flex;
   margin-right: 7px;
+  color: var(--ui-brand-text);
 }
 
 .listWrap {
@@ -139,12 +148,11 @@
   position: sticky;
   top: 0;
   z-index: 20;
-  padding: 6px 8px 4px;
-  font-size: 11.5px;
+  padding: 6px 10px 4px;
+  font-size: 12px;
   line-height: 18px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-weight: 550;
+  letter-spacing: 0.02em;
   color: var(--ui-text-3);
   background-color: var(--dsw-specific-sidebar-fill);
 }
@@ -217,6 +225,14 @@
   align-items: center;
   gap: 16px;
   margin: 14px 0 0 16px;
+  animation: collapsedIn 220ms var(--ds-ease-out) both;
+}
+
+@keyframes collapsedIn {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
 }
 
 .collapsedGroup {
@@ -246,6 +262,17 @@
   }
 }
 
+.drawerClosing {
+  animation: drawerOut 220ms var(--ds-ease-in-out) both;
+  pointer-events: none;
+}
+
+@keyframes drawerOut {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
 .drawerMask {
   position: absolute;
   inset: 0;
@@ -257,6 +284,17 @@
 
 @keyframes maskIn {
   from {
+    opacity: 0;
+  }
+}
+
+.drawerMaskClosing {
+  animation: maskOut 220ms var(--ds-ease-in-out) both;
+  pointer-events: none;
+}
+
+@keyframes maskOut {
+  to {
     opacity: 0;
   }
 }

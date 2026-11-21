@@ -1,4 +1,5 @@
 import { translate, type TranslationMessage } from '../../i18n/index.js'
+import { recordApiCall, type ApiCallKind } from '../usage/apiUsage.js'
 import { readMessageEvent } from './parseEvent.js'
 import { readServerSentEvents } from './sse.js'
 import type {
@@ -66,16 +67,46 @@ const readErrorResponse = async (
   return new ApiError(kind, message, response.status)
 }
 
+/** 按接口路径归类，统计页据此展示各类调用次数；不读取请求体，也不记录任何内容 */
+const classifyApiCall = (url: string, method?: string): ApiCallKind => {
+  const path = url.replace(/^https?:\/\/[^/]+/, '').split('?')[0]
+  if (path.includes('/anthropic/v1/messages')) {
+    return 'chat'
+  }
+  if (path.includes('/user/balance')) {
+    return 'balance'
+  }
+  if (path.includes('/v1/tools/tts')) {
+    return 'tts'
+  }
+  if (path.includes('/v1/tools/asr')) {
+    return 'asr'
+  }
+  if (path.includes('/anthropic/v1/files')) {
+    return method === 'DELETE' ? 'fileDelete' : 'upload'
+  }
+  if (path.endsWith('/models')) {
+    return 'verify'
+  }
+  return 'other'
+}
+
 export const request = async (url: string, init: RequestInit): Promise<Response> => {
+  const kind = classifyApiCall(url, init.method)
   let response: Response
   try {
     response = await fetch(url, init)
   } catch (error) {
+    // 用户主动停止生成会触发 abort，不算接口失败
+    if (!init.signal?.aborted) {
+      recordApiCall(kind, false)
+    }
     if (init.signal?.aborted) {
       throw error
     }
     throw new ApiError('network', error instanceof Error ? error.message : String(error))
   }
+  recordApiCall(kind, response.ok)
   if (!response.ok) {
     throw await readErrorResponse(response)
   }

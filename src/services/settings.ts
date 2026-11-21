@@ -1,11 +1,23 @@
 import { create } from 'zustand'
+import type { ChatModel } from './api/types.js'
 import type { TtsVoice } from './api/speech.js'
 import { normalizeLocation, type UserLocation } from './location.js'
+import {
+  normalizePricingTable,
+  OFFICIAL_PRICING,
+  type PriceTier,
+  type PricingTable,
+  type TierMode,
+  type TokenPrice,
+} from './usage/pricing.js'
 
 export type Locale = 'zh-CN' | 'en-US'
 
 /** 主题偏好；默认跟随系统 */
 export type ThemePreference = 'light' | 'dark' | 'system'
+
+/** 界面风格：只替换中性色板，主色仍由配色预设控制 */
+export type ThemeStyle = 'official' | 'slate' | 'warm' | 'graphite'
 
 /** 排队策略：保留多条依次执行 / 只保留最后一条 */
 export type QueueMode = 'keep' | 'last'
@@ -18,6 +30,8 @@ type Settings = {
   apiKey: string | null
   locale: Locale
   themePreference: ThemePreference
+  /** 界面风格：官方蓝白 / 青灰 / 暖砂 / 石墨 */
+  themeStyle: ThemeStyle
   location: UserLocation | null
   ttsVoice: TtsVoice
   thinking: boolean
@@ -27,10 +41,10 @@ type Settings = {
   themePreset: string
   /** 自定义主色 #rrggbb */
   customBrand: string | null
-  /** 输入单价：元 / 百万 token，null 表示未配置 */
-  pricingInput: number | null
-  /** 输出单价：元 / 百万 token，null 表示未配置 */
-  pricingOutput: number | null
+  /** 各模型在闲时/高峰两档下的官方单价（元 / 百万 token），可在设置中修改 */
+  pricingTable: PricingTable
+  /** 计价档位：auto 按当前北京时间自动选档，offpeak/peak 为手动锁定 */
+  pricingTier: TierMode
   /** 上下文窗口容量，用于计算剩余额度 */
   contextWindow: number
   /** 余额自动刷新间隔（分钟），0 表示关闭 */
@@ -68,14 +82,15 @@ const KEYS = {
   locale: 'chat-demo:locale',
   location: 'chat-demo:location',
   themePreference: 'chat-demo:theme-preference',
+  themeStyle: 'chat-demo:theme-style',
   ttsVoice: 'chat-demo:tts-voice',
   thinking: 'chat-demo:thinking',
   search: 'chat-demo:search',
   siderCollapsed: 'chat-demo:sider-collapsed',
   themePreset: 'chat-demo:theme-preset',
   customBrand: 'chat-demo:custom-brand',
-  pricingInput: 'chat-demo:pricing-input',
-  pricingOutput: 'chat-demo:pricing-output',
+  pricingTable: 'chat-demo:pricing-table',
+  pricingTier: 'chat-demo:pricing-tier',
   contextWindow: 'chat-demo:context-window',
   balanceRefreshMinutes: 'chat-demo:balance-refresh-minutes',
   queueEnabled: 'chat-demo:queue-enabled',
@@ -149,13 +164,19 @@ const initialThemePreference = (): ThemePreference => {
   return saved === 'light' || saved === 'dark' ? saved : 'system'
 }
 
+/** 未保存过时使用贴近 DeepSeek 官方聊天的蓝白风格 */
+const initialThemeStyle = (): ThemeStyle => {
+  const saved = read(KEYS.themeStyle)
+  return saved === 'slate' || saved === 'warm' || saved === 'graphite' ? saved : 'official'
+}
+
 /** 未保存过时使用服务端默认音色 stella（海星） */
 const initialTtsVoice = (): TtsVoice => (read(KEYS.ttsVoice) === 'tide' ? 'tide' : 'stella')
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/i
 
-/** 未保存过时使用默认配色预设 */
-const initialThemePreset = (): string => read(KEYS.themePreset) ?? 'default'
+/** 未保存过时使用官方蓝，配合默认的官方蓝白风格 */
+const initialThemePreset = (): string => read(KEYS.themePreset) ?? 'official'
 
 const initialCustomBrand = (): string | null => {
   const saved = read(KEYS.customBrand)
@@ -171,13 +192,22 @@ const initialNumber = (key: string, fallback: number): number => {
   return Number.isFinite(parsed) ? parsed : fallback
 }
 
-const initialOptionalNumber = (key: string): number | null => {
-  const saved = read(key)
-  if (saved === null || saved.trim() === '') {
-    return null
+/** 未保存过时预填官方单价；已保存时逐字段合并，缺项回落官方值 */
+const initialPricingTable = (): PricingTable => {
+  const saved = read(KEYS.pricingTable)
+  if (!saved) {
+    return OFFICIAL_PRICING
   }
-  const parsed = Number(saved)
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null
+  try {
+    return normalizePricingTable(JSON.parse(saved))
+  } catch {
+    return OFFICIAL_PRICING
+  }
+}
+
+const initialPricingTier = (): TierMode => {
+  const saved = read(KEYS.pricingTier)
+  return saved === 'offpeak' || saved === 'peak' ? saved : 'auto'
 }
 
 export const useSettings = create<Settings>(() => ({
@@ -185,14 +215,15 @@ export const useSettings = create<Settings>(() => ({
   locale: initialLocale(),
   location: initialLocation(),
   themePreference: initialThemePreference(),
+  themeStyle: initialThemeStyle(),
   ttsVoice: initialTtsVoice(),
   thinking: read(KEYS.thinking) === 'true',
   search: read(KEYS.search) === 'true',
   siderCollapsed: read(KEYS.siderCollapsed) === 'true',
   themePreset: initialThemePreset(),
   customBrand: initialCustomBrand(),
-  pricingInput: initialOptionalNumber(KEYS.pricingInput),
-  pricingOutput: initialOptionalNumber(KEYS.pricingOutput),
+  pricingTable: initialPricingTable(),
+  pricingTier: initialPricingTier(),
   contextWindow: initialNumber(KEYS.contextWindow, 128_000),
   balanceRefreshMinutes: initialNumber(KEYS.balanceRefreshMinutes, 0),
   queueEnabled: read(KEYS.queueEnabled) !== 'false',
@@ -229,6 +260,11 @@ export const setLocation = (value: UserLocation | null) => {
 export const setThemePreference = (themePreference: ThemePreference) => {
   write(KEYS.themePreference, themePreference)
   useSettings.setState({ themePreference })
+}
+
+export const setThemeStyle = (themeStyle: ThemeStyle) => {
+  write(KEYS.themeStyle, themeStyle)
+  useSettings.setState({ themeStyle })
 }
 
 export const setTtsVoice = (ttsVoice: TtsVoice) => {
@@ -269,14 +305,37 @@ export const setCustomBrand = (customBrand: string | null) => {
   useSettings.setState({ customBrand: normalized })
 }
 
-export const setPricingInput = (pricingInput: number | null) => {
-  write(KEYS.pricingInput, pricingInput === null ? null : String(pricingInput))
-  useSettings.setState({ pricingInput })
+/** 修改某个模型某一档位下的一项单价；传 null 表示回落官方单价 */
+export const setPricingValue = (
+  model: ChatModel,
+  tier: PriceTier,
+  field: keyof TokenPrice,
+  value: number | null
+) => {
+  const current = useSettings.getState().pricingTable
+  const next = normalizePricingTable({
+    ...current,
+    [model]: {
+      ...current[model],
+      [tier]: {
+        ...current[model][tier],
+        [field]: value === null ? OFFICIAL_PRICING[model][tier][field] : value,
+      },
+    },
+  })
+  write(KEYS.pricingTable, JSON.stringify(next))
+  useSettings.setState({ pricingTable: next })
 }
 
-export const setPricingOutput = (pricingOutput: number | null) => {
-  write(KEYS.pricingOutput, pricingOutput === null ? null : String(pricingOutput))
-  useSettings.setState({ pricingOutput })
+/** 一键恢复官方单价 */
+export const resetPricingTable = () => {
+  write(KEYS.pricingTable, JSON.stringify(OFFICIAL_PRICING))
+  useSettings.setState({ pricingTable: OFFICIAL_PRICING })
+}
+
+export const setPricingTier = (pricingTier: TierMode) => {
+  write(KEYS.pricingTier, pricingTier)
+  useSettings.setState({ pricingTier })
 }
 
 export const setContextWindow = (contextWindow: number) => {

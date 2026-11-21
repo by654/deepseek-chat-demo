@@ -7,7 +7,7 @@
   min-width: 96px;
   max-width: 100%;
   height: 38px;
-  padding: 0 38px 0 14px;
+  padding: 0 34px 0 14px;
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius-pill);
   background: var(--ui-bg-surface);
@@ -15,6 +15,7 @@
   font: inherit;
   font-size: 14px;
   line-height: 22px;
+  text-align: left;
   white-space: nowrap;
   cursor: pointer;
   outline: none;
@@ -40,6 +41,8 @@
 }
 
 .trigger > span:first-child {
+  display: block;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -57,7 +60,7 @@
 .arrow {
   position: absolute;
   top: 50%;
-  right: 12px;
+  right: 11px;
   display: flex;
   color: var(--ui-text-3);
   transform: translateY(-50%);
@@ -112,4 +115,32 @@
 
 .option:hover {
   background: var(--ui-bg-hover);
+}
+
+/* 窄屏：触发区加高到 40px，文字与箭头之间留足空隙，选项行高加大便于点击 */
+@media not all and (min-width: 768px) {
+  .trigger {
+    min-width: 88px;
+    height: 40px;
+    padding: 0 32px 0 13px;
+    font-size: 15px;
+    line-height: 22px;
+  }
+
+  .option {
+    min-height: 44px;
+    padding: 8px 12px;
+    font-size: 15px;
+  }
+}
+
+/* 减少动效：下拉的展开动画与悬停过渡一并关闭 */
+@media (prefers-reduced-motion: reduce) {
+  .trigger,
+  .arrow,
+  .menu,
+  .option {
+    animation: none;
+    transition: none;
+  }
 }

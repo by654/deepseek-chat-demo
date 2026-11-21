@@ -180,7 +180,7 @@ export const AssistantMessage = memo(function AssistantMessage({
                     fontFamily: wordFontFamily,
                     color: wordColor,
                     withMeta: true,
-                    baseName: `DeepSeek-${stamp}`,
+                    baseName: `DeepSeek美化版-${stamp}`,
                   })
                   showToast(t('exportWordDone', { name }))
                 }}

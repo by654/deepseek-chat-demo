@@ -1,6 +1,5 @@
 import { BackupError, fail } from './errors.js'
 import {
-  EXPORT_FORMAT_VERSION,
   type ChatMessage,
   type FileEntry,
   type Fragment,
@@ -64,6 +63,40 @@ const oneOf =
   <const T extends string>(...values: T[]): Read<T> =>
   (value) =>
     values.includes(value as T) ? (value as T) : invalid()
+
+/**
+ * 缺失/异常字段的宽松读取：先按原规则解析，不符合时回退到默认值。
+ * 官方导出结构会随版本增删字段，容忍缺失比直接整包拒绝更有用。
+ */
+const soft =
+  <T>(read: Read<T>, fallback: () => T): Read<T> =>
+  (value) => {
+    try {
+      return read(value)
+    } catch {
+      return fallback()
+    }
+  }
+
+/** 逐项容错：单条消息解析失败时丢弃该条，不影响同会话其余消息。 */
+const lenientList =
+  <T>(read: Read<T>): Read<T[]> =>
+  (value) => {
+    if (!Array.isArray(value)) {
+      return []
+    }
+    const items: T[] = []
+    for (const item of value) {
+      try {
+        items.push(read(item))
+      } catch {
+        // 跳过无法识别的条目
+      }
+    }
+    return items
+  }
+
+const nowTime = (): string => new Date().toISOString()
 
 const tipStyle = oneOf('INFO', 'WARNING', 'CAUTION')
 const searchStatus = oneOf('WIP', 'FINISHED', 'FAILED')
@@ -226,13 +259,17 @@ const sessionId: Read<string> = (value) => {
   return id && !/[/\\]/.test(id) && id !== '.' && id !== '..' ? id : invalid()
 }
 
-/** 版本号用于校验归档格式兼容性；字段结构由各字段的校验函数保证。 */
+/**
+ * 版本号用于校验归档格式兼容性；字段结构由各字段的校验函数保证。
+ * 官方新版会提升版本号、也可能不再写该字段，这里只拦明显非法的值，
+ * 其余情况按既有字段尽力解析，具体问题交给字段级校验给出原因。
+ */
 export const checkManifest = (value: unknown): void => {
   const version = record(value).export_format_version
-  if (typeof version === 'number' && version > EXPORT_FORMAT_VERSION) {
-    fail('backupNewerVersion')
+  if (version === undefined || version === null) {
+    return
   }
-  if (version !== EXPORT_FORMAT_VERSION) {
+  if (typeof version !== 'number' || !Number.isFinite(version) || version < 1) {
     fail('backupInvalidVersion')
   }
 }
@@ -241,11 +278,11 @@ export const readSessionIndex: Read<SessionIndexEntry[]> = list((value) => {
   const item = record(value)
   return {
     id: sessionId(item.id),
-    title: nullable(string)(item.title),
+    title: soft(nullable(string), () => null)(item.title),
     pinned: false,
-    message_count: count(item.message_count),
-    inserted_at: time(item.inserted_at),
-    updated_at: time(item.updated_at),
+    message_count: soft(count, () => 0)(item.message_count),
+    inserted_at: soft(time, nowTime)(item.inserted_at),
+    updated_at: soft(time, nowTime)(item.updated_at),
   }
 })
 
@@ -253,11 +290,11 @@ export const readSessionFile: Read<SessionFile> = (value) => {
   const item = record(value)
   return {
     id: sessionId(item.id),
-    title: nullable(string)(item.title),
+    title: soft(nullable(string), () => null)(item.title),
     pinned: false,
-    current_message_id: count(item.current_message_id),
-    inserted_at: time(item.inserted_at),
-    updated_at: time(item.updated_at),
-    messages: list(message)(item.messages),
+    current_message_id: soft(count, () => 0)(item.current_message_id),
+    inserted_at: soft(time, nowTime)(item.inserted_at),
+    updated_at: soft(time, nowTime)(item.updated_at),
+    messages: lenientList(message)(item.messages),
   }
 }

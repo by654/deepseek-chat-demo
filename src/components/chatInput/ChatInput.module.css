@@ -232,6 +232,14 @@
     min-height: 0;
   }
 
+  /*
+   * 镜子文本决定 textarea 的自动高度。竖屏或横屏高度不足时按视口上限收缩，
+   * 保证功能栏与发送键始终留在卡片内，而不是被 overflow: hidden 裁掉。
+   */
+  .mirror {
+    max-height: min(336px, calc(var(--app-viewport-height, 100dvh) - 240px));
+  }
+
   .attachments,
   .functionRow {
     flex-shrink: 0;
@@ -406,4 +414,79 @@
   line-height: 15px;
   text-align: center;
   font-variant-numeric: tabular-nums;
+}
+
+/* 窄屏：压缩功能栏间距与控件尺寸，避免模型、余额、附件、发送互相挤压 */
+@media not all and (min-width: 768px) {
+  .toggles {
+    flex-wrap: nowrap;
+    gap: 6px;
+    overflow: hidden;
+  }
+
+  .functionRow {
+    gap: 6px;
+    padding: 8px 10px 10px;
+  }
+
+  .toggle {
+    height: 30px;
+    padding: 0 9px;
+    font-size: 12px;
+    line-height: 18px;
+    gap: 4px;
+  }
+
+  .right {
+    gap: 3px;
+  }
+
+  .sendButton,
+  .queueSendButton {
+    width: 34px;
+    height: 34px;
+    margin-left: 4px;
+  }
+}
+
+@media not all and (min-width: 400px) {
+  .functionRow {
+    gap: 4px;
+    padding: 8px 8px 10px;
+  }
+
+  .toggles {
+    gap: 4px;
+  }
+
+  .toggle {
+    padding: 0 8px;
+  }
+
+  .right {
+    gap: 2px;
+  }
+
+  .sendButton,
+  .queueSendButton {
+    width: 32px;
+    height: 32px;
+    margin-left: 2px;
+  }
+}
+
+/* 减少动效：上传转圈、按钮与附件过渡统一关闭 */
+@media (prefers-reduced-motion: reduce) {
+  .wrapper,
+  .attachment,
+  .remove,
+  .toggle,
+  .sendButton,
+  .queueSendButton {
+    transition: none;
+  }
+
+  .uploading::after {
+    animation: none;
+  }
 }

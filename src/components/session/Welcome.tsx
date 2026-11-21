@@ -12,6 +12,9 @@ export const Welcome = () => {
     <div className={styles.container}>
       {isMobile ? <MobileHeader /> : null}
       <div className={styles.welcome}>
+        <span className={styles.logo} aria-hidden>
+          D
+        </span>
         <div className={styles.greeting}>{t('welcomeMessageChat250808')}</div>
         <ChatInput sessionId={null} />
         {isMobile ? <div className={styles.caveat}>{t('contentCaveat')}</div> : null}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { TranslationMessage } from '../../i18n/index.js'
 import { transcribe } from '../../services/api/speech.js'
 import { startRecording, type Recording } from '../../services/speech/recorder.js'
+import { recordAsrSeconds } from '../../services/usage/apiUsage.js'
 import { useSettings } from '../../services/settings.js'
 import { showToast } from '../base/toastState.js'
 
@@ -35,6 +36,9 @@ export const useVoiceInput = (onText: (text: string) => void) => {
   const [seconds, setSeconds] = useState(0)
   const recordingRef = useRef<Recording | null>(null)
   const controllerRef = useRef<AbortController | null>(null)
+  // 录音时长用 ref 读取，避免 finish 每秒重建，也保证自动到时限时记录的是真实秒数
+  const secondsRef = useRef(0)
+  secondsRef.current = seconds
   const operationRef = useRef(0)
   const onTextRef = useRef(onText)
   onTextRef.current = onText
@@ -76,6 +80,7 @@ export const useVoiceInput = (onText: (text: string) => void) => {
       controllerRef.current = controller
       setStatus('transcribing')
       const text = await transcribe(useSettings.getState().apiKey ?? '', audio, controller.signal)
+      recordAsrSeconds(secondsRef.current)
       if (controller.signal.aborted || operationRef.current !== operation) {
         return
       }

@@ -17,6 +17,17 @@
   }
 }
 
+.overlayClosing {
+  animation: overlayOut 160ms var(--ds-ease-in-out) both;
+  pointer-events: none;
+}
+
+@keyframes overlayOut {
+  to {
+    opacity: 0;
+  }
+}
+
 .content {
   position: relative;
   display: flex;
@@ -36,6 +47,17 @@
   from {
     opacity: 0;
     transform: translateY(8px) scale(0.985);
+  }
+}
+
+.contentClosing {
+  animation: contentOut 160ms var(--ds-ease-in-out) both;
+}
+
+@keyframes contentOut {
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.99);
   }
 }
 
@@ -109,6 +131,17 @@
     from {
       transform: translateY(24px);
       opacity: 0.6;
+    }
+  }
+
+  .contentClosing {
+    animation: sheetOut 160ms var(--ds-ease-in-out) both;
+  }
+
+  @keyframes sheetOut {
+    to {
+      transform: translateY(28px);
+      opacity: 0;
     }
   }
 

@@ -93,7 +93,7 @@ export type LogContext = Record<string, unknown>
  */
 export const buildLogDump = (context: LogContext): string => {
   const header = [
-    'DeepSeek Chat 诊断日志（已脱敏）',
+    'DeepSeek 美化版 诊断日志（已脱敏）',
     `导出时间：${new Date().toISOString()}`,
     '',
     '## 环境与配置',
@@ -125,7 +125,7 @@ export const downloadLog = (context: LogContext): string => {
   const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-  const fileName = `deepseek-chat-log-${stamp}.txt`
+  const fileName = `deepseek-beautified-log-${stamp}.txt`
   const link = document.createElement('a')
   link.href = url
   link.download = fileName

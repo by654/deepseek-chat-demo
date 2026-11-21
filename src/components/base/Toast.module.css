@@ -27,6 +27,18 @@
   }
 }
 
+.leaving {
+  animation: toastOut 180ms var(--ds-ease-in-out) both;
+  pointer-events: none;
+}
+
+@keyframes toastOut {
+  to {
+    opacity: 0;
+    transform: translate(-50%, -6px) scale(0.98);
+  }
+}
+
 .error {
   border-color: var(--ui-danger-border);
   background-color: var(--ui-danger-soft);

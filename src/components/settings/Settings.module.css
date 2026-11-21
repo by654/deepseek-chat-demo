@@ -21,6 +21,10 @@
   padding: 0;
 }
 
+.navWrap {
+  display: contents;
+}
+
 .navigation {
   display: flex;
   flex-direction: column;
@@ -86,6 +90,19 @@
   padding: 0 24px;
   overflow-y: auto;
   border-left: 1px solid var(--ui-border-subtle);
+  animation: settingsContentIn 180ms var(--ds-ease-out) both;
+}
+
+@keyframes settingsContentIn {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .cell {
@@ -283,6 +300,63 @@
   color: var(--ui-text-3);
 }
 
+/* 用量计费：每个模型一组三档单价，标签在上、输入框在下，窄屏自动换行 */
+.priceBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 0;
+  box-shadow: inset 0 1px 0 0 var(--ui-border-subtle);
+}
+
+.priceBlockHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  min-width: 0;
+}
+
+.priceBlockTitle {
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 550;
+  color: var(--ui-text-1);
+}
+
+.priceBlockUnit {
+  font-size: 12.5px;
+  line-height: 19px;
+  color: var(--ui-text-3);
+}
+
+.priceGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+}
+
+.priceField {
+  display: flex;
+  flex: 0 1 132px;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.priceFieldLabel {
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--ui-text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.priceField .numberInput {
+  width: 100%;
+}
+
 .error {
   font-size: 12.5px;
   line-height: 19px;
@@ -422,22 +496,40 @@
 
 @media not all and (min-width: 768px) {
   .dialog {
-    align-self: flex-end;
+    /* 手机端全屏覆盖：占满可视高度，无外边距、无圆角 */
+    align-self: stretch;
     width: 100%;
     max-width: none;
-    /* 底部抽屉：高度随内容自适应，超出上限时内部滚动，避免内容不足时底部大面积留白 */
-    height: auto;
-    max-height: calc(100dvh - 56px);
-    max-height: min(calc(100dvh - 56px), 820px);
-    padding: 18px 16px 16px;
-    border-radius: var(--ui-radius-xxl) var(--ui-radius-xxl) 0 0;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    padding: max(12px, env(safe-area-inset-top)) 16px calc(10px + env(safe-area-inset-bottom));
+    border-radius: 0;
   }
 
   .dialogMain {
     flex-direction: column;
-    /* 不再以 flex-basis: 0 撑满卡片，改为由内容决定高度；超过上限时允许收缩以让内部滚动 */
-    flex: 0 1 auto;
+    /* 全屏后由内容区滚动，主体撑满剩余高度 */
+    flex: 1 1 auto;
     min-height: 0;
+  }
+
+  .navWrap {
+    position: relative;
+    display: block;
+    flex-shrink: 0;
+  }
+
+  /* 右侧渐隐提示还有更多页签，避免被截断的图标看起来像独立按钮 */
+  .navWrap::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 6px;
+    width: 48px;
+    background: linear-gradient(to right, transparent, var(--ui-bg-elevated) 72%);
+    pointer-events: none;
   }
 
   .navigation {
@@ -445,7 +537,10 @@
     /* 页签多于屏宽时横向滚动：不换行、不拉伸压缩，隐藏滚动条保持干净 */
     flex-wrap: nowrap;
     gap: 6px;
-    width: auto;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     margin: 4px 0 8px;
     padding: 4px 0 6px;
     overflow-x: auto;
@@ -453,6 +548,7 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
     scroll-snap-type: x proximity;
+    touch-action: pan-x;
     scrollbar-width: none;
   }
 
@@ -481,15 +577,39 @@
   }
 
   .content {
-    /* 内容自适应高度；内容超高时在本区域内滚动，而不是把卡片拉满 */
-    flex: 0 1 auto;
+    /* 全屏卡片：内容区独占剩余高度并在内部滚动 */
+    flex: 1 1 auto;
     margin-right: 0;
-    padding: 14px 0 calc(12px + env(safe-area-inset-bottom));
+    padding: 12px 0 calc(8px + env(safe-area-inset-bottom));
     border-left: none;
+  }
+
+  .row {
+    /* 竖屏下标题、说明与右侧控件统一按顶部对齐，避免高控件把文字挤到中间 */
+    align-items: flex-start;
   }
 
   .text {
     padding-right: 8px;
+    /* 标题与提示文字统一顶端对齐，避免竖排文字错位 */
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .label,
+  .description {
+    display: block;
+    width: 100%;
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+
+  .label {
+    line-height: 21px;
+  }
+
+  .description {
+    line-height: 18px;
   }
 
   .cellButton {
@@ -608,8 +728,8 @@
 
 .accentOptionSelected {
   border-color: var(--ui-brand);
-  background-color: var(--ui-brand-weak);
-  color: var(--ui-text-primary);
+  background-color: var(--ui-brand-soft);
+  color: var(--ui-brand-text-strong);
 }
 
 .swatch {
@@ -620,14 +740,259 @@
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
 }
 
-.colorInput {
-  width: 26px;
-  height: 26px;
-  padding: 0;
+/* 自定义颜色：预览色块 + 文本输入，不依赖浏览器取色器 */
+.customColor {
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px 12px;
   border: 1px solid var(--ui-border);
-  border-radius: 6px;
-  background: none;
+  border-radius: var(--ui-radius-m);
+  background-color: var(--ui-bg-subtle);
+  transition:
+    border-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    background-color var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.customColorActive {
+  border-color: var(--ui-brand-border);
+  background-color: var(--ui-brand-soft);
+}
+
+.colorFieldWrap {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.colorField {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-s);
+  background-color: var(--ui-bg-surface);
+  transition:
+    border-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    box-shadow var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.colorField:focus-within {
+  border-color: var(--ui-brand);
+  box-shadow: 0 0 0 2px var(--ui-ring);
+}
+
+.colorFieldInvalid {
+  border-color: var(--ui-danger);
+}
+
+.colorPreview {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.16);
+}
+
+.colorText {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--ui-text-1);
+  font-family: var(--ds-font-family-code);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+.colorText::placeholder {
+  color: var(--ui-text-3);
+}
+
+.colorHint {
+  color: var(--ui-text-3);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+/* 界面风格卡片：三枚色点 + 名称与一句说明 */
+.themeStyle {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 0;
+  box-shadow: inset 0 1px 0 0 var(--ui-border-subtle);
+}
+
+.sectionHead {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.styleOptions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.styleOption {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-m);
+  background-color: var(--ui-bg-surface);
+  color: var(--ui-text-2);
+  font: inherit;
+  text-align: left;
   cursor: pointer;
+  transition:
+    border-color var(--ds-transition-duration) var(--ds-ease-in-out),
+    background-color var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.styleOption:hover {
+  border-color: var(--ui-border-strong);
+  background-color: var(--ui-bg-hover);
+}
+
+.styleOptionSelected {
+  border-color: var(--ui-brand);
+  background-color: var(--ui-brand-soft);
+}
+
+.styleOption:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ui-ring);
+}
+
+.styleSwatches {
+  display: flex;
+  flex-shrink: 0;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.styleSwatches span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.14);
+}
+
+.styleText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.styleName {
+  color: var(--ui-text-1);
+  font-size: 13px;
+  line-height: 19px;
+  font-weight: 600;
+}
+
+.styleHint {
+  color: var(--ui-text-3);
+  font-size: 11px;
+  line-height: 16px;
+  overflow-wrap: anywhere;
+}
+
+/* API 调用统计 */
+.apiStats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 0;
+  box-shadow: inset 0 1px 0 0 var(--ui-border-subtle);
+}
+
+.apiStatsHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.apiStatGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.apiStat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--ui-border-subtle);
+  border-radius: var(--ui-radius-s);
+  background-color: var(--ui-bg-subtle);
+}
+
+.apiStatLabel {
+  color: var(--ui-text-3);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.apiStatValue {
+  color: var(--ui-text-1);
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.apiCallList {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.apiCallRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 2px;
+  color: var(--ui-text-2);
+  font-size: 12.5px;
+  line-height: 19px;
+}
+
+.apiCallRow + .apiCallRow {
+  box-shadow: inset 0 1px 0 0 var(--ui-border-subtle);
+}
+
+.apiCallValue {
+  flex-shrink: 0;
+  color: var(--ui-text-3);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.apiMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  color: var(--ui-text-3);
+  font-size: 11px;
+  line-height: 16px;
 }
 
 /* 字体缩放滑杆 */
@@ -716,4 +1081,108 @@
   border-radius: var(--ui-radius-pill);
   background: var(--ui-brand);
   transition: width 0.18s ease-out;
+}
+
+/* 减少动效：设置内所有悬停/选中过渡与进度条动画一并关闭 */
+@media (prefers-reduced-motion: reduce) {
+  .navItem,
+  .uploadButton,
+  .themeOption,
+  .numberInput,
+  .apiKeySaved,
+  .apiKeyInput,
+  .confirm,
+  .accentOption,
+  .styleOption,
+  .colorField,
+  .progressFill {
+    transition: none;
+  }
+}
+
+/*
+ * 竖屏覆盖必须放在所有基础样式之后：基础样式定义在主色与统计卡片之后，
+ * 若移动端规则写在它们之前，会被同优先级的 flex-wrap / grid 覆盖，
+ * 表现为「色块折成多行、导航条无法左右滑动」。
+ */
+@media not all and (min-width: 768px) {
+  /* 主题的浅色 / 深色 / 跟随系统改为等宽三列，不再出现两列加一张整行卡片 */
+  .themeOptions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin: 10px 0 12px;
+  }
+
+  .themeOption {
+    min-width: 0;
+    height: 72px;
+    padding: 12px 8px;
+  }
+
+  /* 单价三列等宽，避免竖屏里第三项单独掉到下一行 */
+  .priceGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .priceField {
+    flex: none;
+  }
+
+  .priceFieldLabel {
+    font-size: 11px;
+  }
+
+  .customColor {
+    padding: 8px 10px;
+  }
+
+  .colorField {
+    height: 38px;
+  }
+
+  .colorText {
+    font-size: 16px;
+  }
+
+  .styleOptions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .accentOptions {
+    /* 主色较多时横向滑动，不在竖屏里堆成多行 */
+    flex-wrap: nowrap;
+    max-width: 100%;
+    padding-bottom: 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    touch-action: pan-x;
+  }
+
+  .accentOptions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .accentOption {
+    flex: 0 0 auto;
+    min-height: 40px;
+  }
+
+  .apiStatsHead {
+    flex-wrap: wrap;
+  }
+
+  .apiStatGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .apiMeta {
+    flex-direction: column;
+    gap: 2px;
+  }
 }

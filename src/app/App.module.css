@@ -6,6 +6,48 @@
   background-color: var(--ui-bg-app);
 }
 
+/*
+ * 侧栏容器：收起时不直接卸载，而是把宽度、透明度和内容位移一起过渡，
+ * 让「收起边栏」有明确的收拢动效；visibility 在动画结束后才切换，避免焦点落在不可见元素上。
+ */
+.siderSlot {
+  position: relative;
+  flex-shrink: 0;
+  width: 268px;
+  height: 100%;
+  overflow: hidden;
+  opacity: 1;
+  transition:
+    width 280ms var(--ds-ease-out),
+    opacity 180ms var(--ds-ease-in-out);
+}
+
+.siderSlot > * {
+  width: 268px;
+  height: 100%;
+  transform: translateX(0);
+  opacity: 1;
+  transition:
+    transform 280ms var(--ds-ease-out),
+    opacity 180ms var(--ds-ease-in-out);
+}
+
+.siderSlotCollapsed {
+  width: 0;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition:
+    width 280ms var(--ds-ease-out),
+    opacity 180ms var(--ds-ease-in-out),
+    visibility 0s linear 280ms;
+}
+
+.siderSlotCollapsed > * {
+  transform: translateX(-18px);
+  opacity: 0;
+}
+
 .main {
   position: relative;
   display: flex;
@@ -13,8 +55,6 @@
   flex: 1;
   min-width: 0;
   background-color: var(--ui-bg-canvas);
-  /* 画布左上角的极淡青色光晕，让大面积留白不显平 */
-  background-image: radial-gradient(120% 80% at 12% 0%, var(--ui-brand-glow) 0%, transparent 58%);
   border-left: 1px solid var(--ui-border-subtle);
 }
 
