@@ -1,13 +1,42 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
-import { toSessionSummary, type Session, type SessionSummary } from './types.js'
+import {
+  toSessionSummary,
+  type Message,
+  type Session,
+  type SessionMeta,
+  type SessionSummary,
+} from './types.js'
 
 /** IndexedDB 存储结构版本；新增或调整存储、索引时递增。 */
-const DB_VERSION = 11
+const DB_VERSION = 12
 
 /** 文件原件按附件的本地 id 存储，所有引用同一 id 的消息共用一份；用于缩略图、打开查看，以及没有 serverId 时补传。 */
 export type StoredFile = {
   id: string
   blob: Blob
+}
+
+/** 星标消息：跨会话收集的回答片段，素材库读取。 */
+export type StarRecord = {
+  id: string
+  sessionId: string
+  messageId: string
+  sessionTitle: string
+  content: string
+  model: string | null
+  createdAt: number
+  tags: string[]
+}
+
+/** 会话快照：手动打点的完整消息树，可从快照分叉继续。 */
+export type SnapshotRecord = {
+  id: string
+  sessionId: string
+  sessionTitle: string
+  label: string
+  createdAt: number
+  messages: Message[]
+  rootMessageId: string | null
 }
 
 /** 文件引用留在摘要中，删除会话时通过索引判断原件是否仍被引用。 */
@@ -23,6 +52,16 @@ interface ChatDB extends DBSchema {
   }
   /** 当前使用的文件原件 */
   files: { key: string; value: StoredFile }
+  stars: {
+    key: string
+    value: StarRecord
+    indexes: { sessionId: string }
+  }
+  snapshots: {
+    key: string
+    value: SnapshotRecord
+    indexes: { sessionId: string }
+  }
   /**
    * 历史导入的暂存：导入过程中会话与原件只写入这两个存储，`sessions` / `files` 保持不变；
    * 全部校验通过后在一个事务中替换正式数据并清空暂存，失败时只清空暂存。
@@ -67,6 +106,14 @@ const getDB = () =>
         : db.createObjectStore('sessionSummaries', { keyPath: 'id' })
       if (!summaries.indexNames.contains('fileIds')) {
         summaries.createIndex('fileIds', 'fileIds', { multiEntry: true })
+      }
+      if (!db.objectStoreNames.contains('stars')) {
+        const stars = db.createObjectStore('stars', { keyPath: 'id' })
+        stars.createIndex('sessionId', 'sessionId')
+      }
+      if (!db.objectStoreNames.contains('snapshots')) {
+        const snapshots = db.createObjectStore('snapshots', { keyPath: 'id' })
+        snapshots.createIndex('sessionId', 'sessionId')
       }
     },
   }).catch((error: unknown) => {
@@ -123,9 +170,51 @@ export const renameSession = async (id: string, title: string): Promise<void> =>
   ])
 }
 
-/** 删除会话，仅清理已无会话引用的本地原件；远端文件不删。 */
+/**
+ * 更新会话组织信息（归档、回收站、置顶、文件夹、标签、工作区、隐藏）。
+ * 会话尚未加载到内存时也能写入，同时更新摘要，列表立即可见。
+ */
+export const updateSessionMeta = async (
+  id: string,
+  patch: Partial<SessionMeta>
+): Promise<SessionSummary | undefined> => {
+  const tx = (await getDB()).transaction(['sessions', 'sessionSummaries'], 'readwrite')
+  let summary: SessionSummary | undefined
+  await Promise.all([
+    (async () => {
+      try {
+        const sessions = tx.objectStore('sessions')
+        const session = await sessions.get(id)
+        if (!session) {
+          return
+        }
+        Object.assign(session, patch)
+        await sessions.put(session)
+        const stored = storedSummary(session)
+        await tx.objectStore('sessionSummaries').put(stored)
+        summary = toSessionSummary(stored)
+      } catch (error) {
+        abortTransaction(tx)
+        throw error
+      }
+    })(),
+    tx.done,
+  ])
+  return summary
+}
+
+/** 关闭会话后仍可读取完整内容：搜索、导出、快照与统计共用。 */
+export const loadAllSessions = async (): Promise<Session[]> => (await getDB()).getAll('sessions')
+
+export const loadAllSessionSummaries = async (): Promise<SessionSummary[]> =>
+  (await (await getDB()).getAll('sessionSummaries')).map(toSessionSummary)
+
+/** 永久删除会话，仅清理已无会话引用的本地原件；远端文件不删。 */
 export const deleteSession = async (sessionId: string): Promise<void> => {
-  const tx = (await getDB()).transaction(['sessions', 'sessionSummaries', 'files'], 'readwrite')
+  const tx = (await getDB()).transaction(
+    ['sessions', 'sessionSummaries', 'files', 'stars', 'snapshots'],
+    'readwrite'
+  )
   await Promise.all([
     (async () => {
       try {
@@ -136,6 +225,12 @@ export const deleteSession = async (sessionId: string): Promise<void> => {
         for (const id of summary?.fileIds ?? []) {
           if ((await summaries.index('fileIds').count(id)) === 0) {
             await tx.objectStore('files').delete(id)
+          }
+        }
+        for (const store of ['stars', 'snapshots'] as const) {
+          const keys = await tx.objectStore(store).index('sessionId').getAllKeys(sessionId)
+          for (const key of keys) {
+            await tx.objectStore(store).delete(key)
           }
         }
       } catch (error) {
@@ -156,6 +251,49 @@ export const saveFiles = (files: StoredFile[]): Promise<void> => putFiles('files
 
 export const loadFile = async (id: string): Promise<Blob | undefined> =>
   (await (await getDB()).get('files', id))?.blob
+
+/** 素材库：全部星标消息。 */
+export const loadStars = async (): Promise<StarRecord[]> => {
+  const stars = await (await getDB()).getAll('stars')
+  return stars.sort((a, b) => b.createdAt - a.createdAt)
+}
+
+export const saveStar = async (star: StarRecord): Promise<void> => {
+  await (await getDB()).put('stars', star)
+}
+
+export const deleteStar = async (id: string): Promise<void> => {
+  await (await getDB()).delete('stars', id)
+}
+
+export const deleteStarsForSession = async (sessionId: string): Promise<void> => {
+  const db = await getDB()
+  const tx = db.transaction('stars', 'readwrite')
+  const keys = await tx.store.index('sessionId').getAllKeys(sessionId)
+  await Promise.all([...keys.map((key) => tx.store.delete(key)), tx.done])
+}
+
+/** 会话快照：按创建时间倒序。 */
+export const loadSnapshots = async (sessionId: string): Promise<SnapshotRecord[]> => {
+  const db = await getDB()
+  const snapshots = await db.getAllFromIndex('snapshots', 'sessionId', sessionId)
+  return snapshots.sort((a, b) => b.createdAt - a.createdAt)
+}
+
+export const saveSnapshot = async (snapshot: SnapshotRecord): Promise<void> => {
+  await (await getDB()).put('snapshots', snapshot)
+}
+
+export const deleteSnapshot = async (id: string): Promise<void> => {
+  await (await getDB()).delete('snapshots', id)
+}
+
+export const deleteSnapshotsForSession = async (sessionId: string): Promise<void> => {
+  const db = await getDB()
+  const tx = db.transaction('snapshots', 'readwrite')
+  const keys = await tx.store.index('sessionId').getAllKeys(sessionId)
+  await Promise.all([...keys.map((key) => tx.store.delete(key)), tx.done])
+}
 
 /** 清空导入暂存：开始导入前清除上次中断（如关闭页面）遗留的数据，导入失败后清除本次写入。 */
 export const clearStaging = async (): Promise<void> => {
@@ -215,7 +353,7 @@ export const updateStagingFileTypes = async (types: ReadonlyMap<string, string>)
 export const commitStaging = async (): Promise<SessionSummary[]> => {
   const summaries: SessionSummary[] = []
   const tx = (await getDB()).transaction(
-    ['sessions', 'sessionSummaries', 'files', 'sessionsStaging', 'filesStaging'],
+    ['sessions', 'sessionSummaries', 'files', 'stars', 'snapshots', 'sessionsStaging', 'filesStaging'],
     'readwrite'
   )
   const move = async (from: 'sessionsStaging' | 'filesStaging', to: 'sessions' | 'files') => {
@@ -224,6 +362,9 @@ export const commitStaging = async (): Promise<SessionSummary[]> => {
       await target.clear()
       if (to === 'sessions') {
         await tx.objectStore('sessionSummaries').clear()
+        // 素材库与快照引用旧会话，整体替换历史时一并清空，避免留下悬空记录
+        await tx.objectStore('stars').clear()
+        await tx.objectStore('snapshots').clear()
       }
       for (
         let cursor = await tx.objectStore(from).openCursor();

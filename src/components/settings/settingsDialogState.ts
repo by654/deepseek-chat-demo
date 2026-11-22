@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { useSettings } from '../../services/settings.js'
 
-/** 设置弹窗的分组：通用、外观、用量与统计、消息排队、提示词、导出文档、数据管理、日志 */
+/** 设置弹窗的分组：通用、外观、用量与统计、消息排队、提示词、导出文档、安全、多 Key、数据管理、日志 */
 export type SettingsSection =
   | 'general'
   | 'appearance'
@@ -9,6 +9,9 @@ export type SettingsSection =
   | 'queue'
   | 'prompt'
   | 'word'
+  | 'security'
+  | 'sync'
+  | 'keys'
   | 'data'
   | 'logs'
 

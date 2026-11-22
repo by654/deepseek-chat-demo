@@ -23,6 +23,29 @@ export type FileAttachment = {
   isImage: boolean
   /** 具体 MIME；导入时没有原件或无法识别的为空字符串，不影响图片身份。 */
   mimeType: string
+  /** 附件说明文字，随消息保存，仅用于展示与导出。 */
+  note?: string
+}
+
+/** 会话组织信息：归档、回收站、置顶、文件夹、标签、工作区与隐藏。 */
+export type SessionMeta = {
+  /** 归档时间；有值表示不占主列表，但可被搜索。 */
+  archivedAt?: number
+  /** 删除时间；有值表示在回收站，默认保留 30 天。 */
+  deletedAt?: number
+  pinned?: boolean
+  pinnedAt?: number
+  /** 置顶区内的排序值，越小越靠前。 */
+  pinnedOrder?: number
+  folderId?: string | null
+  tags?: string[]
+  workspaceId?: string | null
+  /** 会话绑定的提示词库条目；提问时叠加到系统提示词。 */
+  personaId?: string | null
+  /** 模板带入的附加系统提示词，优先于工作区与全局提示词。 */
+  systemPrompt?: string
+  /** 访客模式与锁屏下不展示，需要 PIN 解锁后查看。 */
+  hidden?: boolean
 }
 
 /** 本地消息的分支关系；字段缺省时按线性消息列表处理。 */
@@ -114,10 +137,11 @@ export type Session = {
   messages: Message[]
   /** undefined 表示线性消息列表；null 表示空会话。 */
   rootMessageId?: string | null
-}
+} & SessionMeta
 
 /** 会话列表元数据；消息只在打开会话时加载。 */
-export type SessionSummary = Pick<Session, 'id' | 'title' | 'createdAt' | 'updatedAt'>
+export type SessionSummary = Pick<Session, 'id' | 'title' | 'createdAt' | 'updatedAt'> &
+  SessionMeta
 
 /** 显式提取字段，避免将完整会话的消息带进列表。 */
 export const toSessionSummary = (session: SessionSummary): SessionSummary => ({
@@ -125,4 +149,15 @@ export const toSessionSummary = (session: SessionSummary): SessionSummary => ({
   title: session.title,
   createdAt: session.createdAt,
   updatedAt: session.updatedAt,
+  archivedAt: session.archivedAt,
+  deletedAt: session.deletedAt,
+  pinned: session.pinned,
+  pinnedAt: session.pinnedAt,
+  pinnedOrder: session.pinnedOrder,
+  folderId: session.folderId,
+  tags: session.tags,
+  workspaceId: session.workspaceId,
+  personaId: session.personaId,
+  systemPrompt: session.systemPrompt,
+  hidden: session.hidden,
 })

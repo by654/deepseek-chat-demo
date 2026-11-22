@@ -181,3 +181,37 @@
   background: var(--ui-brand);
   transition: width var(--ds-transition-duration) var(--ds-ease-out);
 }
+
+.entries {
+  display: flex;
+  gap: 8px;
+}
+
+.entry {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-m);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text-2);
+  font: inherit;
+  font-size: 13px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: border-color var(--ds-transition-duration) var(--ds-ease-out),
+    background-color var(--ds-transition-duration) var(--ds-ease-out);
+}
+
+.entry:hover {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+  color: var(--ui-text-1);
+}
+
+.entry:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ui-ring);
+}

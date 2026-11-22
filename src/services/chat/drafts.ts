@@ -16,6 +16,8 @@ export type DraftAttachment = {
   id: string
   file: File
   isImage: boolean
+  /** 附件说明，随消息一起保存。 */
+  note?: string
 }
 
 type Draft = { text: string; attachments: DraftAttachment[] }
@@ -111,6 +113,7 @@ export const prepareDraftMessage = (draft: Draft, tasks: Record<string, UploadTa
       size: attachment.file.size,
       isImage: attachment.isImage,
       mimeType: resolveMimeType(attachment.file),
+      note: attachment.note,
       blob: attachment.file,
     })
   }
@@ -126,6 +129,38 @@ export const removeDraftAttachment = (sessionId: string | null, attachmentId: st
   updateDraft(sessionId, (draft) => ({
     ...draft,
     attachments: draft.attachments.filter((item) => item.id !== attachmentId),
+  }))
+}
+
+/** 调整附件顺序：发送时的顺序与展示顺序一致。 */
+export const moveDraftAttachment = (
+  sessionId: string | null,
+  attachmentId: string,
+  direction: -1 | 1
+) => {
+  updateDraft(sessionId, (draft) => {
+    const index = draft.attachments.findIndex((item) => item.id === attachmentId)
+    const target = index + direction
+    if (index < 0 || target < 0 || target >= draft.attachments.length) {
+      return draft
+    }
+    const attachments = [...draft.attachments]
+    const [item] = attachments.splice(index, 1)
+    attachments.splice(target, 0, item)
+    return { ...draft, attachments }
+  })
+}
+
+export const setDraftAttachmentNote = (
+  sessionId: string | null,
+  attachmentId: string,
+  note: string
+) => {
+  updateDraft(sessionId, (draft) => ({
+    ...draft,
+    attachments: draft.attachments.map((item) =>
+      item.id === attachmentId ? { ...item, note: note.trim() || undefined } : item
+    ),
   }))
 }
 

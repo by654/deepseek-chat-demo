@@ -25,6 +25,12 @@ export type QueueMode = 'keep' | 'last'
 /** 重启后恢复上次会话的行为 */
 export type RestoreMode = 'ask' | 'always' | 'off'
 
+/** 界面密度：紧凑模式压缩消息间距与操作区 */
+export type Density = 'comfortable' | 'compact'
+
+/** 正文宽度（px），阅读模式下仍可单独设置 */
+export type ContentWidth = 720 | 820 | 960 | 1120
+
 /** 本机设置，存 localStorage：API Key、语言、主题与配色、位置、朗读音色、开关、用量单价与余额刷新 */
 type Settings = {
   apiKey: string | null
@@ -75,6 +81,36 @@ type Settings = {
   onboardingDone: boolean
   /** 引导页填写的称呼，用于界面问候 */
   nickname: string
+  /** 界面密度 */
+  density: Density
+  /** 正文列宽（px） */
+  contentWidth: ContentWidth
+  /** 阅读模式：隐藏侧栏与操作按钮，只保留正文 */
+  readingMode: boolean
+  /** 导出前自动脱敏（邮箱、手机号、密钥） */
+  exportRedact: boolean
+  /** 月度预算（元），0 表示不提醒 */
+  monthlyBudget: number
+  /** 单会话费用上限（元），0 表示不限制 */
+  sessionCostLimit: number
+  /** 单次请求 token 上限，0 表示不限制 */
+  requestTokenLimit: number
+  /** 上下文自动裁剪：超出窗口比例时丢弃最早轮次 */
+  contextTrim: boolean
+  /** 相同请求指纹复用本地缓存（7 天） */
+  responseCache: boolean
+  /** 长文本粘贴阈值（字符），超过后自动转为文本附件 */
+  longTextFold: number
+  /** 锁屏：4-6 位 PIN 与自动锁定分钟数 */
+  lockPinHash: string | null
+  lockSalt: string | null
+  lockTimeoutMinutes: number
+  /** 会话隐藏 PIN 解锁在本次页面内有效 */
+  hiddenUnlocked: boolean
+  /** 附件原件同步到 Supabase Storage（登录后生效） */
+  attachmentSync: boolean
+  /** 自定义 API 基础地址（保持 DeepSeek 兼容协议）；空表示使用官方地址 */
+  apiBaseUrl: string
 }
 
 const KEYS = {
@@ -108,6 +144,21 @@ const KEYS = {
   wordColor: 'chat-demo:word-color',
   onboardingDone: 'chat-demo:onboarding-done',
   nickname: 'chat-demo:nickname',
+  density: 'chat-demo:density',
+  contentWidth: 'chat-demo:content-width',
+  readingMode: 'chat-demo:reading-mode',
+  exportRedact: 'chat-demo:export-redact',
+  monthlyBudget: 'chat-demo:monthly-budget',
+  sessionCostLimit: 'chat-demo:session-cost-limit',
+  requestTokenLimit: 'chat-demo:request-token-limit',
+  contextTrim: 'chat-demo:context-trim',
+  responseCache: 'chat-demo:response-cache',
+  longTextFold: 'chat-demo:long-text-fold',
+  lockPinHash: 'chat-demo:lock-pin-hash',
+  lockSalt: 'chat-demo:lock-salt',
+  lockTimeoutMinutes: 'chat-demo:lock-timeout-minutes',
+  attachmentSync: 'chat-demo:attachment-sync',
+  apiBaseUrl: 'chat-demo:api-base-url',
 } as const
 
 const read = (key: string) => {
@@ -244,6 +295,25 @@ export const useSettings = create<Settings>(() => ({
   wordColor: read(KEYS.wordColor) ?? '#1a1a1a',
   onboardingDone: read(KEYS.onboardingDone) === 'true',
   nickname: read(KEYS.nickname) ?? '',
+  density: read(KEYS.density) === 'compact' ? 'compact' : 'comfortable',
+  contentWidth: (() => {
+    const value = initialNumber(KEYS.contentWidth, 820)
+    return value === 720 || value === 960 || value === 1120 ? value : 820
+  })(),
+  readingMode: read(KEYS.readingMode) === 'true',
+  exportRedact: read(KEYS.exportRedact) !== 'false',
+  monthlyBudget: initialNumber(KEYS.monthlyBudget, 0),
+  sessionCostLimit: initialNumber(KEYS.sessionCostLimit, 0),
+  requestTokenLimit: initialNumber(KEYS.requestTokenLimit, 0),
+  contextTrim: read(KEYS.contextTrim) === 'true',
+  responseCache: read(KEYS.responseCache) === 'true',
+  longTextFold: initialNumber(KEYS.longTextFold, 3000),
+  lockPinHash: read(KEYS.lockPinHash),
+  lockSalt: read(KEYS.lockSalt),
+  lockTimeoutMinutes: initialNumber(KEYS.lockTimeoutMinutes, 15),
+  hiddenUnlocked: false,
+  attachmentSync: read(KEYS.attachmentSync) !== 'false',
+  apiBaseUrl: read(KEYS.apiBaseUrl) ?? '',
 }))
 
 export const setLocale = (locale: Locale) => {
@@ -272,8 +342,19 @@ export const setTtsVoice = (ttsVoice: TtsVoice) => {
   useSettings.setState({ ttsVoice })
 }
 
+/** 敏感配置的持久化钩子：注册后由安全存储负责加密，不再写明文 localStorage */
+let apiKeyPersister: ((apiKey: string | null) => void) | null = null
+
+export const registerApiKeyPersister = (persister: (apiKey: string | null) => void) => {
+  apiKeyPersister = persister
+}
+
 export const setApiKey = (apiKey: string | null) => {
-  write(KEYS.apiKey, apiKey)
+  if (apiKeyPersister) {
+    apiKeyPersister(apiKey)
+  } else {
+    write(KEYS.apiKey, apiKey)
+  }
   useSettings.setState({ apiKey })
 }
 
@@ -434,6 +515,100 @@ export const setOnboardingDone = (onboardingDone: boolean) => {
 export const setNickname = (nickname: string) => {
   write(KEYS.nickname, nickname)
   useSettings.setState({ nickname })
+}
+
+export const setDensity = (density: Density) => {
+  write(KEYS.density, density)
+  useSettings.setState({ density })
+}
+
+export const setContentWidth = (contentWidth: ContentWidth) => {
+  write(KEYS.contentWidth, String(contentWidth))
+  useSettings.setState({ contentWidth })
+}
+
+export const setReadingMode = (readingMode: boolean) => {
+  write(KEYS.readingMode, String(readingMode))
+  useSettings.setState({ readingMode })
+}
+
+export const setExportRedact = (exportRedact: boolean) => {
+  write(KEYS.exportRedact, String(exportRedact))
+  useSettings.setState({ exportRedact })
+}
+
+export const setMonthlyBudget = (monthlyBudget: number) => {
+  const value = Number.isFinite(monthlyBudget) && monthlyBudget > 0 ? monthlyBudget : 0
+  write(KEYS.monthlyBudget, String(value))
+  useSettings.setState({ monthlyBudget: value })
+}
+
+export const setSessionCostLimit = (sessionCostLimit: number) => {
+  const value = Number.isFinite(sessionCostLimit) && sessionCostLimit > 0 ? sessionCostLimit : 0
+  write(KEYS.sessionCostLimit, String(value))
+  useSettings.setState({ sessionCostLimit: value })
+}
+
+export const setRequestTokenLimit = (requestTokenLimit: number) => {
+  const value =
+    Number.isFinite(requestTokenLimit) && requestTokenLimit > 0 ? Math.round(requestTokenLimit) : 0
+  write(KEYS.requestTokenLimit, String(value))
+  useSettings.setState({ requestTokenLimit: value })
+}
+
+export const setContextTrim = (contextTrim: boolean) => {
+  write(KEYS.contextTrim, String(contextTrim))
+  useSettings.setState({ contextTrim })
+}
+
+export const setResponseCache = (responseCache: boolean) => {
+  write(KEYS.responseCache, String(responseCache))
+  useSettings.setState({ responseCache })
+}
+
+export const setLongTextFold = (longTextFold: number) => {
+  const value =
+    Number.isFinite(longTextFold) && longTextFold > 0
+      ? Math.min(200_000, Math.max(500, Math.round(longTextFold)))
+      : 0
+  write(KEYS.longTextFold, String(value))
+  useSettings.setState({ longTextFold: value })
+}
+
+export const setLockPin = (pinHash: string | null, salt: string | null) => {
+  write(KEYS.lockPinHash, pinHash)
+  write(KEYS.lockSalt, salt)
+  useSettings.setState({ lockPinHash: pinHash, lockSalt: salt })
+}
+
+export const setLockTimeoutMinutes = (lockTimeoutMinutes: number) => {
+  const value = Number.isFinite(lockTimeoutMinutes)
+    ? Math.min(240, Math.max(1, Math.round(lockTimeoutMinutes)))
+    : 15
+  write(KEYS.lockTimeoutMinutes, String(value))
+  useSettings.setState({ lockTimeoutMinutes: value })
+}
+
+export const setHiddenUnlocked = (hiddenUnlocked: boolean) =>
+  useSettings.setState({ hiddenUnlocked })
+
+/** 附件云同步开关：关闭后不再上传或下载附件原件 */
+export const setAttachmentSync = (attachmentSync: boolean) => {
+  write(KEYS.attachmentSync, String(attachmentSync))
+  useSettings.setState({ attachmentSync })
+}
+
+/**
+ * 自定义 API 基础地址：只接受 http(s)，去掉末尾斜杠；空串表示回到官方地址。
+ * 走代理或自建网关时必须保持 DeepSeek 的 /anthropic/v1 与 /models 路径。
+ */
+export const setApiBaseUrl = (raw: string) => {
+  const trimmed = raw.trim().replace(/\/+$/, '')
+  const valid = trimmed === '' || /^https?:\/\/[^\s]+$/i.test(trimmed)
+  const value = valid ? trimmed : useSettings.getState().apiBaseUrl
+  write(KEYS.apiBaseUrl, value)
+  useSettings.setState({ apiBaseUrl: value })
+  return valid
 }
 
 /**

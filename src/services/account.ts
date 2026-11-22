@@ -1,6 +1,7 @@
 import type { Session as AuthSession } from '@supabase/supabase-js'
 import { create } from 'zustand'
 import type { TranslationKey } from '../i18n/index.js'
+import { needsMfaChallenge } from './mfa.js'
 import { supabase } from './supabase/client.js'
 import { USERNAME_EMAIL_DOMAIN } from './supabase/config.js'
 
@@ -14,9 +15,17 @@ type AccountState = {
   /** 是否已尝试读取过本地登录态（无论最终是否登录） */
   ready: boolean
   user: AccountUser | null
+  /** 已绑定验证器，但本次登录还没完成 AAL2 校验 */
+  mfaRequired: boolean
+  mfaFactorId: string | null
 }
 
-export const useAccount = create<AccountState>(() => ({ ready: false, user: null }))
+export const useAccount = create<AccountState>(() => ({
+  ready: false,
+  user: null,
+  mfaRequired: false,
+  mfaFactorId: null,
+}))
 
 /** 用户名只允许 2-20 位的字母、数字、下划线、中文 */
 const USERNAME_PATTERN = /^[a-z0-9_\u4e00-\u9fa5]{2,20}$/
@@ -50,7 +59,23 @@ const applySession = (session: AuthSession | null) => {
   if (current.ready && current.user?.id === next?.id && current.user?.username === next?.username) {
     return
   }
-  useAccount.setState({ ready: true, user: next })
+  useAccount.setState({
+    ready: true,
+    user: next,
+    mfaRequired: false,
+    mfaFactorId: null,
+  })
+  void refreshMfaState()
+}
+
+/** 读取 AAL 状态：绑定了验证器且尚未完成二次校验时要求验证 */
+export const refreshMfaState = async (): Promise<void> => {
+  if (!useAccount.getState().user) {
+    useAccount.setState({ mfaRequired: false, mfaFactorId: null })
+    return
+  }
+  const result = await needsMfaChallenge()
+  useAccount.setState({ mfaRequired: result.required, mfaFactorId: result.factorId })
 }
 
 /** Supabase 返回英文报错，这里统一映射成中文提示用的文案键 */

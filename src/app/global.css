@@ -172,3 +172,36 @@ body {
     background-color var(--ds-transition-duration-slow) var(--ds-ease-in-out),
     color var(--ds-transition-duration-slow) var(--ds-ease-in-out);
 }
+
+/* 阅读模式：隐藏侧栏与消息操作区，只保留正文，适合阅读与打印 */
+html[data-reading='on'] [data-reading-hide] {
+  display: none !important;
+}
+
+html[data-reading='on'] {
+  --message-list-padding-horizontal: 24px;
+}
+
+/* 紧凑密度：缩小正文与行距，在窄屏上多显示一些内容 */
+html[data-density='compact'] {
+  --message-list-padding-horizontal: 24px;
+}
+
+html[data-density='compact'] body {
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+@media print {
+  html,
+  body,
+  #root {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  [data-reading-hide] {
+    display: none !important;
+  }
+}

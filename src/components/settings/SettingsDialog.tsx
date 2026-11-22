@@ -33,8 +33,11 @@ import { regionCodes, getRegionName, provinces } from '../../services/location.j
 import {
   applyFontScale,
   isChineseBrowser,
+  setContentWidth,
   setContextWindow,
   setCustomBrand,
+  setDensity,
+  setExportRedact,
   setFadeOutput,
   setFirstTurnPrompt,
   setFontCode,
@@ -42,12 +45,21 @@ import {
   setFontThinking,
   setLocale,
   setLocation,
+  setLockTimeoutMinutes,
+  setLongTextFold,
+  setMonthlyBudget,
+  setHiddenUnlocked,
   setPricingTier,
   setPricingValue,
   resetPricingTable,
   setQueueEnabled,
   setQueueMode,
+  setReadingMode,
+  setRequestTokenLimit,
+  setResponseCache,
+  setContextTrim,
   setRestoreMode,
+  setSessionCostLimit,
   setSystemPrompt,
   setThemePreference,
   setThemePreset,
@@ -57,7 +69,11 @@ import {
   setWordExportEnabled,
   setWordFontFamily,
   setWordFontSize,
+  setAttachmentSync,
+  setApiBaseUrl,
   useSettings,
+  type ContentWidth,
+  type Density,
   type QueueMode,
   type RestoreMode,
   type ThemePreference,
@@ -89,6 +105,16 @@ import { Select, type SelectOption } from '../base/Select.js'
 import { showToast } from '../base/toastState.js'
 import { ApiKeyConfirm, ApiKeyField, useApiKeyEditor } from './ApiKeyField.js'
 import { closeSettings, useSettingsDialog, type SettingsSection } from './settingsDialogState.js'
+import { setPin, clearPin, lockNow } from '../../services/security.js'
+import { useKeys, addKey, removeKey, activateKey, maskKey } from '../../services/keys.js'
+import { useAccount } from '../../services/account.js'
+import { cloudStorageUsage, syncAllAttachments, useCloudFiles } from '../../services/sync/cloudFiles.js'
+import { formatSize } from '../../services/attachments.js'
+import { loadUsageReport, type UsageReport } from '../../services/usageReport.js'
+import { replyCacheSize, clearReplyCache } from '../../services/replyCache.js'
+import { formatCost } from '../../services/usage/pricing.js'
+import { formatTokens } from '../../services/usage/tokens.js'
+import features from '../features/features.module.css'
 import styles from './Settings.module.css'
 
 /**
@@ -111,6 +137,9 @@ const sections: { value: SettingsSection; label: TranslationKey; icon: ReactNode
   { value: 'queue', label: 'settingsTabQueue', icon: <IconSendOutline16 /> },
   { value: 'prompt', label: 'settingsTabPrompt', icon: <IconEditOutline16 /> },
   { value: 'word', label: 'settingsTabWord', icon: <IconDownloadOutline16 /> },
+  { value: 'security', label: 'settingsTabSecurity', icon: <IconDataOutline16 /> },
+  { value: 'sync', label: 'settingsTabSync', icon: <IconDataOutline16 /> },
+  { value: 'keys', label: 'settingsTabKeys', icon: <IconDataOutline16 /> },
   { value: 'logs', label: 'settingsTabLogs', icon: <IconDataOutline16 /> },
   { value: 'data', label: 'settingDialogAsideDataOptionLabel', icon: <IconDataOutline16 /> },
 ]
@@ -170,11 +199,14 @@ const SettingsContent = () => {
               <ThemeStyleSetting />
               <AccentSetting />
               <FontSetting />
+              <DensitySetting />
               <FadeSetting />
             </>
           ) : section === 'usage' ? (
             <>
               <UsageSetting />
+              <BudgetSetting />
+              <UsageReportSetting />
               <ApiStatsSetting />
             </>
           ) : section === 'queue' ? (
@@ -183,6 +215,12 @@ const SettingsContent = () => {
             <PromptSetting />
           ) : section === 'word' ? (
             <WordSetting />
+          ) : section === 'security' ? (
+            <SecuritySetting />
+          ) : section === 'sync' ? (
+            <SyncSetting />
+          ) : section === 'keys' ? (
+            <KeysSetting />
           ) : section === 'logs' ? (
             <LogsSetting />
           ) : (
@@ -858,8 +896,7 @@ const ProgressBar = ({ percent }: { percent: number }) => {
 }
 
 /** 选文件后先提示导入方式；确认后才检查文件并执行导入，任何错误都提示导入失败。 */
-const useHistoryImport = () => {
-  const [file, setFile] = useState<File | null>(null)
+const useHistoryImport = () => {  const [file, setFile] = useState<File | null>(null)
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState<Status>(null)
   const [mode, setMode] = useState<ImportMode>('merge')
@@ -1498,5 +1535,661 @@ const RestoreSetting = () => {
         />
       }
     />
+  )
+}
+
+/* ---------------- 新增：界面密度 ---------------- */
+
+const DensitySetting = () => {
+  const density = useSettings((state) => state.density)
+  const contentWidth = useSettings((state) => state.contentWidth)
+  const readingMode = useSettings((state) => state.readingMode)
+  return (
+    <>
+      <SettingCell
+        label="界面密度"
+        description="紧凑模式压缩正文行距与页边距，适合小屏或长会话"
+        status={null}
+        action={
+          <Select
+            value={density}
+            options={[
+              { value: 'comfortable', label: '舒适' },
+              { value: 'compact', label: '紧凑' },
+            ]}
+            ariaLabel="界面密度"
+            onChange={(value) => setDensity(value as Density)}
+          />
+        }
+      />
+      <SettingCell
+        label="正文宽度"
+        description="桌面端消息列的最大宽度，阅读模式仍可单独使用"
+        status={null}
+        action={
+          <Select
+            value={String(contentWidth)}
+            options={[
+              { value: '720', label: '窄 720' },
+              { value: '820', label: '标准 820' },
+              { value: '960', label: '宽 960' },
+              { value: '1120', label: '超宽 1120' },
+            ]}
+            ariaLabel="正文宽度"
+            onChange={(value) => setContentWidth(Number(value) as ContentWidth)}
+          />
+        }
+      />
+      <SettingCell
+        label="阅读模式"
+        description="隐藏侧栏与消息操作区，适合纯阅读与打印"
+        status={null}
+        action={
+          <Toggle
+            checked={readingMode}
+            label="阅读模式"
+            onChange={(value) => setReadingMode(value)}
+          />
+        }
+      />
+    </>
+  )
+}
+
+/* ---------------- 新增：预算与保护 ---------------- */
+
+const NumberSetting = ({
+  label,
+  description,
+  value,
+  unit,
+  onCommit,
+}: {
+  label: string
+  description: string
+  value: number
+  unit: string
+  onCommit: (value: number) => void
+}) => {
+  const [draft, setDraft] = useState(value > 0 ? String(value) : '')
+  useEffect(() => {
+    setDraft(value > 0 ? String(value) : '')
+  }, [value])
+  return (
+    <SettingCell
+      label={label}
+      description={description}
+      status={null}
+      action={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <input
+            className={features.input}
+            style={{ width: 110, textAlign: 'right' }}
+            inputMode="decimal"
+            value={draft}
+            placeholder="0"
+            aria-label={label}
+            onChange={(event) => setDraft(event.target.value)}
+            onBlur={() => onCommit(Number(draft) || 0)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.currentTarget.blur()
+              }
+            }}
+          />
+          <span style={{ color: 'var(--ui-text-3)', fontSize: 12, whiteSpace: 'nowrap' }}>{unit}</span>
+        </div>
+      }
+    />
+  )
+}
+
+const BudgetSetting = () => {
+  const monthlyBudget = useSettings((state) => state.monthlyBudget)
+  const sessionCostLimit = useSettings((state) => state.sessionCostLimit)
+  const requestTokenLimit = useSettings((state) => state.requestTokenLimit)
+  const contextTrim = useSettings((state) => state.contextTrim)
+  const responseCache = useSettings((state) => state.responseCache)
+  const [cacheCount, setCacheCount] = useState(() => replyCacheSize())
+  return (
+    <>
+      <NumberSetting
+        label="月度预算"
+        description="当月估算费用超过该值时在顶部提醒，0 表示关闭"
+        value={monthlyBudget}
+        unit="元"
+        onCommit={setMonthlyBudget}
+      />
+      <NumberSetting
+        label="单会话费用上限"
+        description="发送前检查本会话累计费用，超过后需要二次确认"
+        value={sessionCostLimit}
+        unit="元"
+        onCommit={setSessionCostLimit}
+      />
+      <NumberSetting
+        label="单次请求 token 上限"
+        description="按字符估算上下文与输入，超过时拦截发送"
+        value={requestTokenLimit}
+        unit="token"
+        onCommit={setRequestTokenLimit}
+      />
+      <SettingCell
+        label="上下文自动裁剪"
+        description="接近窗口容量时丢弃最早轮次，至少保留最近一轮"
+        status={null}
+        action={
+          <Toggle checked={contextTrim} label="上下文自动裁剪" onChange={setContextTrim} />
+        }
+      />
+      <SettingCell
+        label="响应缓存"
+        description="相同请求指纹直接复用最近 7 天的本地结果，减少重复费用"
+        status={null}
+        action={<Toggle checked={responseCache} label="响应缓存" onChange={setResponseCache} />}
+      />
+      <SettingCell
+        label="本地响应缓存"
+        description={`当前缓存 ${cacheCount} 条`}
+        status={null}
+        action={
+          <Button
+            size="m"
+            variant="outlined"
+            className={styles.cellButton}
+            onClick={() => {
+              clearReplyCache()
+              setCacheCount(0)
+              showToast({ key: 'cacheCleared' })
+            }}
+          >
+            清空缓存
+          </Button>
+        }
+      />
+    </>
+  )
+}
+
+const UsageReportSetting = () => {
+  const [report, setReport] = useState<UsageReport | null>(null)
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    let alive = true
+    setLoading(true)
+    void loadUsageReport()
+      .then((value) => {
+        if (alive) {
+          setReport(value)
+        }
+      })
+      .finally(() => {
+        if (alive) {
+          setLoading(false)
+        }
+      })
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  if (loading) {
+    return <div className={styles.description}>正在统计本机会话用量…</div>
+  }
+  if (!report || report.totalCalls === 0) {
+    return <div className={styles.description}>还没有带用量的回答，聊几轮后再来看报表。</div>
+  }
+  const maxMonth = Math.max(...report.months.map((month) => month.cost), 0.0001)
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div>
+        <div className={styles.label}>模型效率</div>
+        <div className={styles.description}>
+          按当前单价与时段估算；重试次数基于同一提问存在多个回答版本统计。
+        </div>
+        <div style={{ overflowX: 'auto', marginTop: 8 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <thead>
+              <tr style={{ color: 'var(--ui-text-3)', textAlign: 'left' }}>
+                <th style={{ padding: '6px 8px' }}>模型</th>
+                <th style={{ padding: '6px 8px' }}>回答数</th>
+                <th style={{ padding: '6px 8px' }}>token</th>
+                <th style={{ padding: '6px 8px' }}>费用</th>
+                <th style={{ padding: '6px 8px' }}>平均单次</th>
+                <th style={{ padding: '6px 8px' }}>重试</th>
+              </tr>
+            </thead>
+            <tbody>
+              {report.models.map((stat) => (
+                <tr key={stat.model} style={{ borderTop: '1px solid var(--ui-border-subtle)' }}>
+                  <td style={{ padding: '6px 8px', fontWeight: 600 }}>{stat.model}</td>
+                  <td style={{ padding: '6px 8px' }}>{stat.calls}</td>
+                  <td style={{ padding: '6px 8px' }}>{formatTokens(stat.tokens.total)}</td>
+                  <td style={{ padding: '6px 8px' }}>{formatCost(stat.cost)}</td>
+                  <td style={{ padding: '6px 8px' }}>{formatCost(stat.avgCost)}</td>
+                  <td style={{ padding: '6px 8px' }}>{stat.retries}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div className={styles.label}>近 6 个月费用</div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 110, marginTop: 8 }}>
+          {report.months.map((month) => (
+            <div
+              key={month.month}
+              title={`${month.month} · ${formatCost(month.cost)} · ${month.calls} 次`}
+              style={{
+                display: 'flex',
+                flex: 1,
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 4,
+                height: '100%',
+                justifyContent: 'flex-end',
+              }}
+            >
+              <div
+                style={{
+                  width: '100%',
+                  maxWidth: 36,
+                  height: `${Math.max(3, Math.round((month.cost / maxMonth) * 78))}px`,
+                  borderRadius: 4,
+                  background: 'var(--ui-brand)',
+                  opacity: month.month === new Date().toISOString().slice(0, 7) ? 1 : 0.55,
+                }}
+              />
+              <span style={{ fontSize: 10, color: 'var(--ui-text-3)' }}>{month.month.slice(5)}</span>
+            </div>
+          ))}
+        </div>
+        <div className={styles.description} style={{ marginTop: 6 }}>
+          本月 {formatCost(report.currentMonthCost)} · 累计 {formatCost(report.totalCost)} · 共{' '}
+          {report.totalCalls} 次回答
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ---------------- 新增：云同步 ---------------- */
+
+const SyncSetting = () => {
+  const t = useTranslate()
+  const user = useAccount((state) => state.user)
+  const attachmentSync = useSettings((state) => state.attachmentSync)
+  const progress = useCloudFiles((state) => state.progress)
+  const error = useCloudFiles((state) => state.error)
+  const [usage, setUsage] = useState<{ bytes: number; count: number } | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  const refresh = () => {
+    if (!user) {
+      setUsage(null)
+      return
+    }
+    void cloudStorageUsage().then(setUsage)
+  }
+
+  useEffect(refresh, [user])
+
+  const runSync = async () => {
+    if (!user || busy) {
+      return
+    }
+    setBusy(true)
+    try {
+      const result = await syncAllAttachments()
+      showToast({
+        key: result.uploaded + result.downloaded > 0 ? 'attachmentSynced' : 'attachmentNothing',
+        params: { uploaded: result.uploaded, downloaded: result.downloaded },
+      })
+      refresh()
+    } catch {
+      showToast({ key: 'attachmentSyncError', type: 'error' })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <>
+      <SettingCell
+        label={t('attachmentSyncLabel')}
+        description={user ? t('attachmentSyncHint') : t('attachmentSyncLogin')}
+        status={null}
+        action={
+          <Toggle
+            checked={attachmentSync}
+            label={t('attachmentSyncLabel')}
+            onChange={setAttachmentSync}
+          />
+        }
+      />
+      {user ? (
+        <>
+          <SettingCell
+            label={t('attachmentSyncUsageTitle')}
+            description={
+              usage ? t('attachmentSyncUsage', { size: formatSize(usage.bytes), count: usage.count }) : t('profileLoading')
+            }
+            status={null}
+            action={
+              <Button size="m" variant="outlined" onClick={refresh}>
+                {t('adminRefresh')}
+              </Button>
+            }
+          />
+          <SettingCell
+            label={t('attachmentSyncNow')}
+            description={
+              progress
+                ? t('attachmentSyncing', { done: progress.done, total: progress.total })
+                : t('attachmentSyncNowHint')
+            }
+            status={null}
+            action={
+              <Button size="m" disabled={busy || progress !== null} onClick={() => void runSync()}>
+                {busy || progress !== null ? t('syncing') : t('attachmentSyncNow')}
+              </Button>
+            }
+          />
+          {error ? (
+            <div className={styles.description + ' ' + styles.error}>
+              {t(
+                error === 'missing'
+                  ? 'attachmentSchemaMissing'
+                  : error === 'quota'
+                    ? 'attachmentQuotaExceeded'
+                    : 'attachmentSyncError'
+              )}
+            </div>
+          ) : null}
+        </>
+      ) : null}
+    </>
+  )
+}
+
+/* ---------------- 新增：安全与锁屏 ---------------- */
+
+const SecuritySetting = () => {
+  const lockPinHash = useSettings((state) => state.lockPinHash)
+  const lockTimeoutMinutes = useSettings((state) => state.lockTimeoutMinutes)
+  const exportRedact = useSettings((state) => state.exportRedact)
+  const hiddenUnlocked = useSettings((state) => state.hiddenUnlocked)
+  const [pin, setPinValue] = useState('')
+  const [confirmPin, setConfirmPin] = useState('')
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const save = async () => {
+    if (!/^\d{4,6}$/.test(pin)) {
+      setError('PIN 需要 4-6 位数字')
+      return
+    }
+    if (pin !== confirmPin) {
+      setError('两次输入的 PIN 不一致')
+      return
+    }
+    setBusy(true)
+    setError('')
+    try {
+      await setPin(pin)
+      setPinValue('')
+      setConfirmPin('')
+      showToast({ key: 'pinSet' })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <>
+      <SettingCell
+        label={lockPinHash ? '已设置锁屏 PIN' : '设置锁屏 PIN'}
+        description="PIN 只保存加盐哈希；锁屏后需要输入 PIN 才能查看本机会话"
+        status={null}
+        action={
+          <div style={{ display: 'flex', gap: 6 }}>
+            <input
+              className={features.input}
+              style={{ width: 110 }}
+              type="password"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="4-6 位 PIN"
+              value={pin}
+              onChange={(event) => {
+                setPinValue(event.target.value.replace(/\D/g, ''))
+                setError('')
+              }}
+            />
+            <input
+              className={features.input}
+              style={{ width: 110 }}
+              type="password"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="再输一次"
+              value={confirmPin}
+              onChange={(event) => {
+                setConfirmPin(event.target.value.replace(/\D/g, ''))
+                setError('')
+              }}
+            />
+            <Button size="m" disabled={busy} onClick={() => void save()}>
+              {lockPinHash ? '更新' : '设置'}
+            </Button>
+          </div>
+        }
+      />
+      {error ? <div className={styles.description + ' ' + styles.error}>{error}</div> : null}
+      {lockPinHash ? (
+        <>
+          <SettingCell
+            label="自动锁定"
+            description="无操作或切回页面时超过该时长需要重新解锁"
+            status={null}
+            action={
+              <Select
+                value={String(lockTimeoutMinutes)}
+                options={[
+                  { value: '1', label: '1 分钟' },
+                  { value: '5', label: '5 分钟' },
+                  { value: '15', label: '15 分钟' },
+                  { value: '30', label: '30 分钟' },
+                  { value: '60', label: '60 分钟' },
+                ]}
+                ariaLabel="自动锁定"
+                onChange={(value) => setLockTimeoutMinutes(Number(value))}
+              />
+            }
+          />
+          <SettingCell
+            label="隐藏会话"
+            description={hiddenUnlocked ? '已解锁，本次页面内可见隐藏会话' : '解锁后可查看标记为隐藏的会话'}
+            status={null}
+            action={
+              <div style={{ display: 'flex', gap: 6 }}>
+                <Button
+                  size="m"
+                  variant="outlined"
+                  onClick={() => {
+                    setHiddenUnlocked(true)
+                    showToast({ key: 'hiddenSessionsShown' })
+                  }}
+                >
+                  显示隐藏
+                </Button>
+                <Button
+                  size="m"
+                  variant="outlined"
+                  onClick={() => {
+                    lockNow()
+                    closeSettings()
+                  }}
+                >
+                  立即锁定
+                </Button>
+                <Button
+                  size="m"
+                  variant="dangerOutlined"
+                  onClick={() => {
+                    clearPin()
+                    showToast({ key: 'pinCleared' })
+                  }}
+                >
+                  清除 PIN
+                </Button>
+              </div>
+            }
+          />
+        </>
+      ) : null}
+      <SettingCell
+        label="导出前脱敏"
+        description="自动遮蔽 API Key、Bearer 凭证、邮箱、手机号与身份证号"
+        status={null}
+        action={<Toggle checked={exportRedact} label="导出前脱敏" onChange={setExportRedact} />}
+      />
+    </>
+  )
+}
+
+/* ---------------- 新增：多 Key 与高级 ---------------- */
+
+const KeysSetting = () => {
+  const keys = useKeys((state) => state.keys)
+  const activeId = useKeys((state) => state.activeId)
+  const longTextFold = useSettings((state) => state.longTextFold)
+  const apiBaseUrl = useSettings((state) => state.apiBaseUrl)
+  const [label, setLabel] = useState('')
+  const [key, setKey] = useState('')
+  const [baseUrlDraft, setBaseUrlDraft] = useState(apiBaseUrl)
+
+  return (
+    <>
+      <SettingCell
+        label="多 API Key 轮换"
+        description="401 / 402 / 429 时自动切到下一条；Key 加密保存在本机"
+        status={null}
+        action={
+          <Button
+            size="m"
+            variant="outlined"
+            className={styles.cellButton}
+            onClick={() => {
+              if (!key.trim()) {
+                showToast({ key: 'keyRequired', type: 'error' })
+                return
+              }
+              addKey(key, label)
+              setKey('')
+              setLabel('')
+              showToast({ key: 'keyAdded' })
+            }}
+          >
+            添加 Key
+          </Button>
+        }
+      />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {keys.length === 0 ? (
+          <div className={styles.description}>还没有登记多个 Key，当前使用数据管理中的 API Key。</div>
+        ) : (
+          keys.map((item) => (
+            <div
+              key={item.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '7px 9px',
+                border: '1px solid var(--ui-border-subtle)',
+                borderRadius: 9,
+              }}
+            >
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 12.5, fontWeight: 600 }}>
+                  {item.label}
+                  {item.id === activeId ? (
+                    <span style={{ marginLeft: 6, color: 'var(--ui-brand-text)', fontSize: 11 }}>
+                      当前
+                    </span>
+                  ) : null}
+                </span>
+                <span style={{ color: 'var(--ui-text-3)', fontSize: 11 }}>
+                  {maskKey(item.key)}
+                  {item.failures > 0 ? ` · 失败 ${item.failures} 次` : ''}
+                </span>
+              </span>
+              {item.id === activeId ? null : (
+                <Button size="s" variant="outlined" onClick={() => activateKey(item.id)}>
+                  切换
+                </Button>
+              )}
+              <Button size="s" variant="dangerOutlined" onClick={() => removeKey(item.id)}>
+                删除
+              </Button>
+            </div>
+          ))
+        )}
+        <div style={{ display: 'flex', gap: 6 }}>
+          <input
+            className={features.input}
+            style={{ width: 140 }}
+            placeholder="备注，如：主账号"
+            value={label}
+            onChange={(event) => setLabel(event.target.value)}
+          />
+          <input
+            className={features.input}
+            style={{ flex: 1 }}
+            type="password"
+            placeholder="sk-…"
+            value={key}
+            onChange={(event) => setKey(event.target.value)}
+          />
+        </div>
+      </div>
+      <NumberSetting
+        label="长文本自动转为附件"
+        description="粘贴超过该字符数的文本时自动挂为文本附件，0 表示关闭"
+        value={longTextFold}
+        unit="字符"
+        onCommit={setLongTextFold}
+      />
+      <SettingCell
+        label="自定义 API 地址"
+        description="留空使用官方地址；代理或自建网关需要保持 DeepSeek 兼容协议（/anthropic/v1、/models、/v1/tools）"
+        status={null}
+        action={
+          <div style={{ display: 'flex', gap: 6 }}>
+            <input
+              className={features.input}
+              style={{ width: 240 }}
+              value={baseUrlDraft}
+              placeholder="https://api.deepseek.com"
+              onChange={(event) => setBaseUrlDraft(event.target.value)}
+            />
+            <Button
+              size="m"
+              onClick={() => {
+                if (setApiBaseUrl(baseUrlDraft)) {
+                  showToast({ key: 'apiBaseUrlSaved' })
+                } else {
+                  showToast({ key: 'apiBaseUrlInvalid', type: 'error' })
+                }
+              }}
+            >
+              保存
+            </Button>
+          </div>
+        }
+      />
+    </>
   )
 }

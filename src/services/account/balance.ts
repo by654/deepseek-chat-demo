@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { API_ORIGIN, request } from '../api/client.js'
+import { currentApiOrigin, request } from '../api/client.js'
 
 /** 余额查询结果：ok=可用，unavailable=接口不存在，error=请求失败 */
 type BalanceStatus = 'idle' | 'loading' | 'ok' | 'unavailable' | 'error'
@@ -36,7 +36,7 @@ const initialState: BalanceState = {
 
 export const useBalance = create<BalanceState>(() => initialState)
 
-const BALANCE_URL = `${API_ORIGIN}/user/balance`
+const balanceUrl = () => `${currentApiOrigin()}/user/balance`
 /** 连续失败后停止自动刷新的阈值，避免无效请求 */
 const MAX_AUTO_REFRESH_FAILURES = 3
 
@@ -87,7 +87,7 @@ export const refreshBalance = async (apiKey: string | null, signal?: AbortSignal
   }
   useBalance.setState({ pending: true, status: 'loading', reason: null })
   try {
-    const response = await request(BALANCE_URL, {
+    const response = await request(balanceUrl(), {
       method: 'GET',
       headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
       ...(signal ? { signal } : {}),

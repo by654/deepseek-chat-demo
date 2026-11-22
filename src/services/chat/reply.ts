@@ -6,6 +6,7 @@ import type {
   OutputBlockStart,
   TextBlockParam,
 } from '../api/types.js'
+import { estimateTokens } from '../usage/tokens.js'
 import type {
   AssistantMessage,
   FileAttachment,
@@ -345,3 +346,37 @@ export const toRequestMessages = (
 /** 思考用时（秒），至少 1 秒 */
 export const getThinkingSeconds = (startedAt: number, endedAt: number) =>
   Math.max(1, Math.round((endedAt - startedAt) / 1000))
+
+const roundCost = (user: UserMessage, reply: AssistantMessage) =>
+  estimateTokens(user.content) +
+  estimateTokens(getReplyText(reply)) +
+  user.files.length * 600 +
+  16
+
+/**
+ * 上下文自动裁剪：按字符估算 token，从最早轮次开始丢弃，直到剩余内容与系统提示词
+ * 不超过预算；至少保留最近一轮，避免会话突然失去上下文。
+ */
+export const trimHistoryToBudget = (
+  history: Message[],
+  question: UserMessage,
+  systemPrompt: string,
+  budget: number
+): Message[] => {
+  const rounds = getContextRounds(history)
+  if (rounds.length === 0) {
+    return history
+  }
+  let used = estimateTokens(systemPrompt) + estimateTokens(question.content) + 32
+  let start = rounds.length
+  while (start > 0) {
+    const [user, reply] = rounds[start - 1]
+    const cost = roundCost(user, reply)
+    if (start < rounds.length && used + cost > budget) {
+      break
+    }
+    used += cost
+    start -= 1
+  }
+  return rounds.slice(start).flatMap(([user, reply]) => [user, reply])
+}

@@ -62,7 +62,10 @@ export const UserMessage = memo(function UserMessage({
   }
 
   return (
-    <div className={clsx(styles.container, isFirst && styles.isFirst)}>
+    <div
+      className={clsx(styles.container, isFirst && styles.isFirst)}
+      data-message-id={message.id}
+    >
       {message.files.length > 0 ? (
         <div
           className={clsx(
@@ -116,7 +119,7 @@ export const UserMessage = memo(function UserMessage({
         <>
           {message.content ? <div className={styles.bubble}>{message.content}</div> : null}
           <div className={styles.bottom}>
-            <div className={clsx(styles.actions, isLast && styles.alwaysShow)}>
+            <div className={clsx(styles.actions, isLast && styles.alwaysShow)} data-reading-hide>
               {message.content ? <CopyButton text={message.content} /> : null}
               <IconButton
                 icon={<IconEditOutline16 />}

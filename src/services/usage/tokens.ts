@@ -52,6 +52,20 @@ export const latestContextTokens = (messages: readonly AssistantMessage[]): numb
   return null
 }
 
+/** 粗略 token 估算：CJK 每字约 1 token，其他字符约 0.3 token；用于发送前阈值与上下文裁剪。 */
+export const estimateTokens = (text: string): number => {
+  let cjk = 0
+  let other = 0
+  for (const char of text) {
+    if (/[\u3400-\u9fff\uf900-\ufaff]/.test(char)) {
+      cjk += 1
+    } else {
+      other += 1
+    }
+  }
+  return Math.ceil(cjk + other * 0.3)
+}
+
 /** 令牌数展示：超过一万用 k 缩写，保留一位小数 */
 export const formatTokens = (value: number): string => {
   if (value < 1000) {

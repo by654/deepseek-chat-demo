@@ -1,3 +1,19 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-width: 100%;
+}
+
+.note {
+  overflow: hidden;
+  color: var(--ui-text-3);
+  font-size: 11px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .image {
   display: flex;
   align-items: center;

@@ -1,0 +1,47 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(520px, calc(100vw - 32px));
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.label {
+  color: var(--ui-text-2);
+  font-size: 12.5px;
+  font-weight: 550;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: 9px;
+  outline: none;
+  background: var(--ui-bg-elevated);
+  color: var(--ui-text-1);
+  font: inherit;
+  font-size: 13.5px;
+}
+
+.textarea {
+  min-height: 110px;
+  resize: vertical;
+  line-height: 21px;
+}
+
+.input:focus,
+.textarea:focus {
+  border-color: var(--ui-brand);
+}
+
+.error {
+  color: var(--ui-danger);
+  font-size: 12.5px;
+}

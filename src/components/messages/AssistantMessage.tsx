@@ -1,6 +1,6 @@
 import { useTranslate } from '../../i18n/index.js'
 import clsx from 'clsx'
-import { memo } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { IconDownloadOutline16, IconRefreshOutline16, IconWarningOutline16 } from '../base/icons.js'
 import { downloadWord } from '../../services/export/wordExport.js'
 import { useSettings } from '../../services/settings.js'
@@ -26,6 +26,17 @@ import {
   type MessageVersions,
   type SelectMessageVersion,
 } from './BranchSwitcher.js'
+import { useChatStore } from '../../services/chat/store.js'
+import { toggleStar, useStars } from '../../services/stars.js'
+import { extractTables, downloadCsv, tableName } from '../../services/export/csv.js'
+import { downloadSpeechAudio } from '../../services/speech/ttsExport.js'
+import { Menu } from '../base/Menu.js'
+import {
+  IconAudioOutline16,
+  IconStarFill16,
+  IconStarOutline16,
+  IconTableOutline16,
+} from '../features/icons.js'
 import styles from './AssistantMessage.module.css'
 
 const TOP_UP_URL = 'https://platform.deepseek.com/top_up'
@@ -64,8 +75,45 @@ export const AssistantMessage = memo(function AssistantMessage({
   const copyText = responseText || notice?.text
   const waiting = streaming && view.steps.length === 0 && !view.answer && !message.thinking
   const summaryEntry = `${message.id}-summary`
+  const tables = useMemo(
+    () => (answer?.markdown ? extractTables(answer.markdown) : []),
+    [answer?.markdown]
+  )
+  const starred = useStars((state) =>
+    state.items.some((item) => item.id === `${sessionId}:${message.id}`)
+  )
+  const [audioBusy, setAudioBusy] = useState(false)
+
+  const star = () => {
+    const session = useChatStore.getState().sessions.find((item) => item.id === sessionId)
+    void toggleStar({
+      sessionId,
+      messageId: message.id,
+      sessionTitle: session?.title || '新对话',
+      content: (answer?.markdown || responseText).trim(),
+      model: message.model,
+    }).then((added) => {
+      showToast({ key: added ? 'starAdded' : 'starRemoved' })
+    })
+  }
+
+  const exportAudio = async () => {
+    if (audioBusy || !responseText) {
+      return
+    }
+    setAudioBusy(true)
+    stopReadAloud()
+    try {
+      const name = await downloadSpeechAudio(responseText, message.id.slice(0, 8))
+      showToast({ key: 'ttsExportDone', params: { name } })
+    } catch {
+      showToast({ key: 'ttsFailed', type: 'error' })
+    } finally {
+      setAudioBusy(false)
+    }
+  }
   return (
-    <div className={styles.message} data-quotable>
+    <div className={styles.message} data-quotable data-message-id={message.id} data-reading-scope>
       {refused ? null : (
         <ReplyArea
           message={message}
@@ -149,10 +197,49 @@ export const AssistantMessage = memo(function AssistantMessage({
       {streaming ? null : (
         <div className={styles.bottom}>
           <BranchSwitcher versions={versions} disabled={busy} onSelect={onSelectVersion} />
-          <div className={clsx(styles.actions, isLast && styles.alwaysShow)}>
+          <div className={clsx(styles.actions, isLast && styles.alwaysShow)} data-reading-hide>
             {copyText ? <CopyButton text={copyText} /> : null}
             {responseText && !refused ? (
               <ReadAloudButton messageId={message.id} text={responseText} />
+            ) : null}
+            {responseText ? (
+              <IconButton
+                icon={starred ? <IconStarFill16 /> : <IconStarOutline16 />}
+                tooltip={starred ? '取消收藏' : '收藏到素材库'}
+                tooltipPlacement="bottom"
+                onClick={star}
+              />
+            ) : null}
+            {tables.length > 0 ? (
+              <Menu
+                options={tables.map((table, index) => ({
+                  key: String(index),
+                  label: `导出表格 ${index + 1}（${table.rows.length} 行）为 CSV`,
+                  icon: <IconTableOutline16 />,
+                  onSelect: () => {
+                    downloadCsv(table, tableName(table, index))
+                    showToast({ key: 'tableExported' })
+                  },
+                }))}
+              >
+                {({ toggle }) => (
+                  <IconButton
+                    icon={<IconTableOutline16 />}
+                    tooltip="表格导出 CSV"
+                    tooltipPlacement="bottom"
+                    onClick={toggle}
+                  />
+                )}
+              </Menu>
+            ) : null}
+            {responseText && !refused ? (
+              <IconButton
+                icon={<IconAudioOutline16 />}
+                tooltip={audioBusy ? '正在生成音频…' : '导出语音 WAV'}
+                tooltipPlacement="bottom"
+                disabled={audioBusy}
+                onClick={() => void exportAudio()}
+              />
             ) : null}
             <IconButton
               icon={<IconRefreshOutline16 />}

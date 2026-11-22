@@ -6,6 +6,12 @@
   padding: 6px 8px 6px 6px;
 }
 
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .name {
   margin-left: 10px;
   color: var(--ui-text-2);

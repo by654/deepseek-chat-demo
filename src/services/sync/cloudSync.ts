@@ -13,6 +13,7 @@ import {
   PUSH_RPC,
 } from '../supabase/config.js'
 import { setChatSyncHandlers } from './chatEvents.js'
+import { clearCloudFileCache, scheduleAttachmentSync } from './cloudFiles.js'
 import { isSessionUnchanged, sessionFingerprint } from './fingerprint.js'
 import {
   clearFingerprints,
@@ -822,8 +823,9 @@ const applyAccount = (userId: string | null, previousId: string | null) => {
     return
   }
   if (previousId) {
-    // 退出登录 / 切换账号：清掉上一个账号的指纹缓存，避免串号
+    // 退出登录 / 切换账号：清掉上一个账号的指纹缓存与附件清单，避免串号
     clearFingerprints(previousId)
+    clearCloudFileCache()
     clearAutoQueue()
   }
   if (userId) {
@@ -846,7 +848,13 @@ export const startCloudSync = () => {
     return
   }
   started = true
-  setChatSyncHandlers({ saved: scheduleSessionPush, deleted: scheduleSessionDelete })
+  setChatSyncHandlers({
+    saved: (session) => {
+      scheduleSessionPush(session)
+      scheduleAttachmentSync(session)
+    },
+    deleted: scheduleSessionDelete,
+  })
   bindAutoSyncTriggers()
   useAccount.subscribe((state, previous) => {
     applyAccount(state.user?.id ?? null, previous.user?.id ?? null)

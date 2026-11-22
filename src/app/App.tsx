@@ -30,9 +30,26 @@ import { stopReadAloud } from '../services/speech/readAloud.js'
 import { CollapsedSider } from '../components/sider/CollapsedSider.js'
 import { closeMobileSider } from '../components/sider/mobileSiderState.js'
 import { MobileSider, Sider } from '../components/sider/Sider.js'
+import { CommandPalette, installShortcuts } from '../components/features/CommandPalette.js'
+import { LibraryDialog } from '../components/features/LibraryDialog.js'
+import { CompareDialog } from '../components/features/CompareDialog.js'
+import { LockScreen } from '../components/features/LockScreen.js'
+import { VersionBanner } from '../components/features/VersionBanner.js'
+import { BudgetAlert } from '../components/features/BudgetAlert.js'
+import { AnnouncementBanner } from '../components/features/AnnouncementBanner.js'
+import { SharedSessionPage } from '../components/features/SharedSessionPage.js'
+import { MfaGate } from '../components/account/MfaGate.js'
+import { loadStars } from '../services/stars.js'
+import { setLibraryView, useLibrary } from '../services/library.js'
 import styles from './App.module.css'
 
+/** 应用入口：分享链接单独渲染只读页，其余进入聊天主界面 */
 export const App = () => {
+  const shareId = new URLSearchParams(window.location.search).get('share')
+  return shareId ? <SharedSessionPage id={shareId} /> : <ChatApp />
+}
+
+const ChatApp = () => {
   const t = useTranslate()
   const isMobile = useIsMobile()
   const locale = useSettings((state) => state.locale)
@@ -59,6 +76,10 @@ export const App = () => {
   const fontText = useSettings((state) => state.fontText)
   const fontCode = useSettings((state) => state.fontCode)
   const fontThinking = useSettings((state) => state.fontThinking)
+  const density = useSettings((state) => state.density)
+  const contentWidth = useSettings((state) => state.contentWidth)
+  const readingMode = useSettings((state) => state.readingMode)
+  const libraryView = useLibrary((state) => state.view)
 
   usePreventPageScroll(isMobile)
 
@@ -76,6 +97,20 @@ export const App = () => {
     document.documentElement.dataset.fadeOutput = fadeOutput ? 'on' : 'off'
   }, [fadeOutput])
 
+  // 密度与正文宽度：新增的界面偏好通过根元素属性与 CSS 变量生效
+  useEffect(() => {
+    const root = document.documentElement
+    root.dataset.density = density
+    root.dataset.reading = readingMode ? 'on' : 'off'
+    root.style.setProperty('--message-list-max-width', `${contentWidth}px`)
+    return () => {
+      root.style.removeProperty('--message-list-max-width')
+    }
+  }, [density, contentWidth, readingMode])
+
+  // 全局快捷键：Ctrl+K 命令面板、Ctrl+Shift+N 新对话
+  useEffect(() => installShortcuts(), [])
+
   // 记录当前会话，供下次打开时的「继续上次聊天」使用
   useEffect(() => {
     saveLastSession(activeId)
@@ -86,6 +121,10 @@ export const App = () => {
   useEffect(bindChatPersistence, [])
   // 恢复登录态并开启云端同步（含跨端实时订阅）；未登录时只做本地存储
   useEffect(startCloudSync, [])
+  // 素材库列表
+  useEffect(() => {
+    void loadStars()
+  }, [])
 
   // 搜索结果面板只属于当前会话
   useEffect(closeSearchPanel, [activeId])
@@ -95,7 +134,17 @@ export const App = () => {
   useEffect(closeMobileSider, [activeId, isMobile])
 
   useEffect(() => {
-    void initChat()
+    // 分享导入后带 ?session=<id> 回到主界面：初始化完成后直接打开该会话
+    void initChat().then(() => {
+      const target = new URLSearchParams(window.location.search).get('session')
+      if (!target) {
+        return
+      }
+      selectSession(target)
+      const url = new URL(window.location.href)
+      url.searchParams.delete('session')
+      window.history.replaceState(null, '', url.toString())
+    })
   }, [])
 
   // 已完成引导但没填 API Key 时，打开设置的数据页提醒补充
@@ -110,15 +159,31 @@ export const App = () => {
       <div ref={frameRef} className={styles.frame}>
         {isMobile ? (
           <MobileSider />
-        ) : (
+        ) : readingMode ? null : (
           <div
             className={clsx(styles.siderSlot, siderCollapsed && styles.siderSlotCollapsed)}
             aria-hidden={siderCollapsed}
+            data-reading-hide
           >
             <Sider />
           </div>
         )}
         <main className={styles.main}>
+          <BudgetAlert />
+          <AnnouncementBanner />
+          {libraryView !== 'active' ? (
+            <div className={styles.libraryNotice} role="status">
+              <span>{libraryView === 'archived' ? '正在查看归档会话' : '回收站保留 30 天，可恢复'}</span>
+              <button
+                type="button"
+                className={styles.libraryNoticeAction}
+                onClick={() => setLibraryView('active')}
+              >
+                返回全部
+              </button>
+            </div>
+          ) : null}
+          <VersionBanner />
           {saveError ? (
             <div className={styles.saveError} role="alert">
               <span>{t('sessionSaveFailed')}</span>
@@ -177,6 +242,11 @@ export const App = () => {
       <RestorePrompt />
       <OnboardingDialog />
       <SettingsDialog />
+      <CommandPalette />
+      <LibraryDialog />
+      <CompareDialog />
+      <LockScreen />
+      <MfaGate />
       <Toast />
     </>
   )

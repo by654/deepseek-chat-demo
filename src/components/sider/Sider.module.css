@@ -218,6 +218,158 @@
   color: var(--ui-text-1);
 }
 
+.workspaceRow {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  margin-top: 8px;
+}
+
+.workspaceSelect,
+.folderSelect {
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-s);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text-2);
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+}
+
+.workspaceSelect:focus,
+.folderSelect:focus {
+  border-color: var(--ui-brand-border);
+}
+
+.viewRow {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.viewChip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  justify-content: center;
+  padding: 4px 6px;
+  border: 1px solid var(--ui-border-subtle);
+  border-radius: var(--ui-radius-s);
+  background: transparent;
+  color: var(--ui-text-3);
+  font: inherit;
+  font-size: 11.5px;
+  line-height: 16px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.viewChip svg {
+  width: 13px;
+  height: 13px;
+}
+
+.viewChip:hover {
+  background: var(--ui-bg-hover);
+  color: var(--ui-text-1);
+}
+
+.viewChipActive {
+  border-color: var(--ui-brand-border);
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand-text);
+  font-weight: 600;
+}
+
+.count {
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--ui-bg-hover);
+  color: var(--ui-text-3);
+  font-size: 10px;
+  line-height: 14px;
+}
+
+.filterRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.tagRow {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  color: var(--ui-text-3);
+}
+
+.tagRow svg {
+  flex-shrink: 0;
+  width: 13px;
+  height: 13px;
+}
+
+.tagChip {
+  flex-shrink: 0;
+  padding: 2px 7px;
+  border: 1px solid var(--ui-border-subtle);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ui-text-3);
+  font: inherit;
+  font-size: 10.5px;
+  line-height: 16px;
+  cursor: pointer;
+}
+
+.tagChip:hover {
+  background: var(--ui-bg-hover);
+}
+
+.tagChipActive {
+  border-color: var(--ui-brand-border);
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand-text);
+}
+
+.trashHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 10px 6px;
+  color: var(--ui-text-3);
+  font-size: 11px;
+}
+
+.trashAction {
+  border: none;
+  background: none;
+  color: var(--ui-danger);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.empty {
+  padding: 24px 12px;
+  color: var(--ui-text-3);
+  font-size: 12.5px;
+  text-align: center;
+}
+
 .collapsed {
   position: absolute;
   top: 0;

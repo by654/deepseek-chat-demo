@@ -17,6 +17,7 @@ import { AssistantMessage } from './AssistantMessage.js'
 import { registerJumpToBottom, setAwayFromBottom } from './jumpState.js'
 import { ScrollToBottomContext } from './scrollContext.js'
 import { UserMessage } from './UserMessage.js'
+import { useJump } from '../../services/chat/jump.js'
 import styles from './MessageList.module.css'
 import type { Message } from '../../services/chat/types.js'
 
@@ -39,6 +40,8 @@ const getUploadRetryId = (messages: Message[], streaming: boolean) => {
 const STICKY_THRESHOLD = 40
 /** 距底部超过该值时显示「回到底部」按钮，避免贴边抖动 */
 const JUMP_THRESHOLD = 120
+/** 首屏只渲染最近 50 条，向上滚动或点击按钮再加载更早消息。 */
+const PAGE_SIZE = 50
 const EMPTY_VERSIONS: MessageVersions = { ids: [], index: -1 }
 
 export const MessageList = ({
@@ -57,6 +60,12 @@ export const MessageList = ({
   const scrollTopRef = useRef(0)
   const restoreScrollRef = useRef<{ messageId: string; top: number } | null>(null)
   const messages = getVisibleMessages(session)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const jumpRequest = useJump((state) => state.request)
+  const lastJumpToken = useRef(0)
+  const loadMoreRef = useRef<{ height: number } | null>(null)
+  const hiddenCount = Math.max(0, messages.length - visibleCount)
+  const shownMessages = hiddenCount > 0 ? messages.slice(hiddenCount) : messages
   const [previousVersions, setPreviousVersions] = useState(() =>
     buildMessageVersions(session, new Map())
   )
@@ -75,6 +84,64 @@ export const MessageList = ({
       scrollTopRef.current = el.scrollTop
     }
   }, [])
+
+  // 切换会话回到最近 50 条
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE)
+    loadMoreRef.current = null
+  }, [session.id])
+
+  // 加载更早消息后保持阅读位置不跳动
+  useLayoutEffect(() => {
+    const el = scrollRef.current
+    const anchor = loadMoreRef.current
+    if (el && anchor) {
+      el.scrollTop += el.scrollHeight - anchor.height
+      scrollTopRef.current = el.scrollTop
+      loadMoreRef.current = null
+    }
+  }, [visibleCount])
+
+  const loadEarlier = useCallback(() => {
+    const el = scrollRef.current
+    loadMoreRef.current = { height: el?.scrollHeight ?? 0 }
+    setVisibleCount((count) => Math.min(messages.length, count + PAGE_SIZE))
+  }, [messages.length])
+
+  // 命令面板跳转：展开到目标消息，居中滚动并短暂高亮
+  useEffect(() => {
+    const request = jumpRequest
+    if (!request || request.sessionId !== session.id || request.token === lastJumpToken.current) {
+      return
+    }
+    const index = messages.findIndex((message) => message.id === request.messageId)
+    if (index < 0) {
+      return
+    }
+    lastJumpToken.current = request.token
+    if (index < hiddenCount) {
+      setVisibleCount(messages.length - index + 2)
+      return
+    }
+    const timer = window.setTimeout(() => {
+      const el = scrollRef.current?.querySelector<HTMLElement>(
+        `[data-message-id="${CSS.escape(request.messageId)}"]`
+      )
+      if (!el) {
+        return
+      }
+      stickyRef.current = false
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      el.style.transition = 'box-shadow 200ms ease-out'
+      el.style.boxShadow = '0 0 0 2px var(--ui-brand), 0 0 0 6px var(--ui-brand-soft)'
+      el.style.borderRadius = '12px'
+      window.setTimeout(() => {
+        el.style.boxShadow = ''
+        el.style.borderRadius = ''
+      }, 1800)
+    }, 60)
+    return () => window.clearTimeout(timer)
+  }, [jumpRequest, session.id, messages, hiddenCount])
 
   // 内容、键盘和输入框高度变化时，继续遵循当前跟随状态。
   useLayoutEffect(() => {
@@ -171,6 +238,10 @@ export const MessageList = ({
       } else if (el.scrollTop < scrollTopRef.current) {
         stickyRef.current = false
       }
+      // 向上滚动到顶部附近时自动加载更早的消息
+      if (el.scrollTop < 24 && hiddenCount > 0) {
+        loadEarlier()
+      }
       // 离开底部一定距离才亮出向下箭头，回到底部立即隐藏。
       setAwayFromBottom(distance > JUMP_THRESHOLD)
       scrollTopRef.current = el.scrollTop
@@ -178,7 +249,7 @@ export const MessageList = ({
     }
     el.addEventListener('scroll', onScroll, { passive: true })
     return () => el.removeEventListener('scroll', onScroll)
-  }, [isMobile, scrollToBottom, session.id])
+  }, [isMobile, scrollToBottom, session.id, hiddenCount, loadEarlier])
 
   const lastIndex = messages.length - 1
   const uploadRetryId = getUploadRetryId(messages, streaming)
@@ -187,8 +258,14 @@ export const MessageList = ({
       <div className={styles.container}>
         <div ref={scrollRef} className={styles.scroll}>
           <div ref={contentRef} className={styles.column}>
-            {messages.map((message, index) =>
-              message.role === 'user' ? (
+            {hiddenCount > 0 ? (
+              <button type="button" className={styles.loadEarlier} onClick={loadEarlier}>
+                加载更早的 {Math.min(PAGE_SIZE, hiddenCount)} 条消息
+              </button>
+            ) : null}
+            {shownMessages.map((message, shownIndex) => {
+              const index = hiddenCount + shownIndex
+              return message.role === 'user' ? (
                 <UserMessage
                   key={message.id}
                   sessionId={session.id}
@@ -212,7 +289,7 @@ export const MessageList = ({
                   onSelectVersion={selectVersion}
                 />
               )
-            )}
+            })}
           </div>
         </div>
         {footer}

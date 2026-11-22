@@ -28,12 +28,57 @@
 }
 
 .title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   flex: 1;
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
-  text-overflow: ellipsis;
   line-height: 20px;
+}
+
+.titleText {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pinIcon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--ui-brand-text);
+  opacity: 0.8;
+}
+
+.pinIcon svg {
+  width: 13px;
+  height: 13px;
+}
+
+.streamingDot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ui-brand);
+  animation: sessionPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes sessionPulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.draggableItem {
+  cursor: grab;
+}
+
+.draggableItem:active {
+  cursor: grabbing;
 }
 
 .action {

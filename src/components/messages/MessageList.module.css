@@ -26,6 +26,24 @@
   padding-bottom: 28px;
 }
 
+.loadEarlier {
+  display: block;
+  margin: 14px auto 2px;
+  padding: 6px 14px;
+  border: 1px solid var(--ui-border);
+  border-radius: 999px;
+  background: var(--ui-bg-surface);
+  color: var(--ui-text-2);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.loadEarlier:hover {
+  border-color: var(--ui-brand-border);
+  color: var(--ui-brand-text);
+}
+
 @media not all and (min-width: 768px) {
   .scroll {
     scrollbar-gutter: auto;

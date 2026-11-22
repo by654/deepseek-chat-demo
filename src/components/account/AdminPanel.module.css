@@ -1,0 +1,381 @@
+.wide {
+  width: min(900px, calc(100vw - 32px));
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 120px;
+}
+
+.hint {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ui-text-3);
+  padding: 8px 2px;
+}
+
+.error {
+  padding: 8px 10px;
+  border-radius: var(--ui-radius-m);
+  background: var(--ui-danger-soft, rgba(220, 38, 38, 0.1));
+  color: var(--ui-danger, #dc2626);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.notice {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-m);
+  background: var(--ui-bg-subtle, rgba(0, 0, 0, 0.03));
+}
+
+.noticeTitle {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+  color: var(--ui-text-1);
+  word-break: break-word;
+}
+
+.noticeHint {
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--ui-text-3);
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-m);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  padding: 9px 12px;
+  background: var(--ui-bg-subtle, rgba(0, 0, 0, 0.03));
+  color: var(--ui-text-3);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.table td {
+  padding: 10px 12px;
+  color: var(--ui-text-2);
+  border-bottom: 1px solid var(--ui-border);
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table tbody tr:hover td {
+  background: var(--ui-bg-hover, rgba(0, 0, 0, 0.02));
+}
+
+.username {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ui-text-1);
+  font-weight: 600;
+}
+
+.selfTag {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand-text-strong);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.email {
+  margin-top: 2px;
+  color: var(--ui-text-3);
+  font-size: 11.5px;
+  line-height: 16px;
+}
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.badgeActive,
+.badgeDisabled {
+  display: inline-block;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.badgeActive {
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand-text-strong);
+}
+
+.badgeDisabled {
+  background: var(--ui-danger-soft, rgba(220, 38, 38, 0.1));
+  color: var(--ui-danger, #dc2626);
+}
+
+.rowActions {
+  display: flex;
+  gap: 6px;
+}
+
+.confirm {
+  max-width: 420px;
+  font-size: 13.5px;
+  line-height: 20px;
+  color: var(--ui-text-2);
+}
+
+/* ---------------- 页签与概览 ---------------- */
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.tab {
+  padding: 5px 11px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: var(--ui-text-2);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.tab:hover {
+  background: var(--ui-bg-hover);
+}
+
+.tabActive {
+  border-color: var(--ui-border);
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand-text-strong);
+  font-weight: 600;
+}
+
+.tabPanel {
+  max-height: min(56vh, 560px);
+  overflow-y: auto;
+}
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.statCard {
+  padding: 14px 16px;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  background: var(--ui-bg-subtle);
+}
+
+.statValue {
+  color: var(--ui-text-1);
+  font-size: 24px;
+  font-weight: 650;
+  line-height: 32px;
+  font-variant-numeric: tabular-nums;
+}
+
+.statLabel {
+  color: var(--ui-text-3);
+  font-size: 12px;
+}
+
+/* ---------------- 公告 / 反馈列表 ---------------- */
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 2px 0;
+}
+
+.rowBetween {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.sectionHint {
+  color: var(--ui-text-3);
+  font-size: 12px;
+}
+
+.formCard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  background: var(--ui-bg-subtle);
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--ui-text-2);
+  font-size: 12px;
+}
+
+.formInput,
+.formTextarea {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  outline: none;
+  background: var(--ui-bg-surface);
+  color: var(--ui-text-1);
+  font: inherit;
+  font-size: 13px;
+}
+
+.formTextarea {
+  resize: vertical;
+  line-height: 20px;
+}
+
+.formInput:focus,
+.formTextarea:focus {
+  border-color: var(--ui-brand);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+
+.formCheck {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ui-text-2);
+  font-size: 12.5px;
+}
+
+.listRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--ui-border-subtle);
+  border-radius: 10px;
+}
+
+.listMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.listTitle {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--ui-text-1);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.listTag {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--ui-bg-hover);
+  color: var(--ui-text-3);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 17px;
+}
+
+.listMeta {
+  margin-top: 2px;
+  color: var(--ui-text-3);
+  font-size: 11.5px;
+  word-break: break-all;
+}
+
+.listBody {
+  margin-top: 4px;
+  color: var(--ui-text-2);
+  font-size: 12.5px;
+  line-height: 19px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.filterRow {
+  display: flex;
+  gap: 6px;
+}
+
+.filter {
+  padding: 4px 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: 999px;
+  background: none;
+  color: var(--ui-text-2);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.filterActive {
+  background: var(--ui-brand-soft);
+  border-color: var(--ui-brand);
+  color: var(--ui-brand-text-strong);
+}
+
+.auditTarget {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.auditDetail {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ui-text-3);
+  font-size: 11.5px;
+}

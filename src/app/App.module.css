@@ -77,6 +77,29 @@
   font-size: 14px;
 }
 
+.libraryNotice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-shrink: 0;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--ui-border-subtle);
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand-text);
+  font-size: 12px;
+}
+
+.libraryNoticeAction {
+  border: none;
+  background: none;
+  color: var(--ui-brand-text);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .loadingView {
   position: absolute;
   inset: 0;

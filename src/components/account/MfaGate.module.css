@@ -1,0 +1,72 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: var(--ui-overlay, rgba(9, 14, 22, 0.55));
+  backdrop-filter: blur(6px);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(360px, 100%);
+  padding: 24px;
+  border: 1px solid var(--ui-border);
+  border-radius: 18px;
+  background: var(--ui-bg-surface);
+  box-shadow: var(--ui-shadow-lg);
+}
+
+.title {
+  color: var(--ui-text-1);
+  font-size: 17px;
+  font-weight: 650;
+}
+
+.hint {
+  color: var(--ui-text-3);
+  font-size: 12.5px;
+  line-height: 19px;
+}
+
+.input {
+  height: 44px;
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  outline: none;
+  background: var(--ui-bg-elevated);
+  color: var(--ui-text-1);
+  font: inherit;
+  font-size: 22px;
+  letter-spacing: 8px;
+  text-align: center;
+}
+
+.input:focus {
+  border-color: var(--ui-brand);
+}
+
+.error {
+  color: var(--ui-danger);
+  font-size: 12.5px;
+}
+
+.signOut {
+  align-self: center;
+  border: none;
+  background: none;
+  color: var(--ui-text-3);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.signOut:hover {
+  color: var(--ui-text-1);
+  text-decoration: underline;
+}

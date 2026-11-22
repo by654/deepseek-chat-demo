@@ -17,19 +17,27 @@ import {
 } from './drafts.js'
 import { createLatestReminder } from './latestReminder.js'
 import { notifySessionDeleted, notifySessionSaved } from '../sync/chatEvents.js'
+import { getPersona, getWorkspace, useLibrary } from '../library.js'
 import {
   applyEvent,
   canContinueReply,
   getContextRounds,
+  getReplyText,
   settleReply,
   toRequestMessages,
+  trimHistoryToBudget,
 } from './reply.js'
+import { buildReplyCacheKey, readCachedReply, writeCachedReply } from '../replyCache.js'
+import { rotateApiKey } from '../keys.js'
+import { invalidateSearchIndex } from '../search.js'
+import { useStars } from '../stars.js'
 import {
   toSessionSummary,
   type AssistantMessage,
   type FileAttachment,
   type Message,
   type Session,
+  type SessionMeta,
   type SessionSummary,
   type UserMessage,
 } from './types.js'
@@ -90,6 +98,9 @@ export const useChatStore = create<ChatState>(() => ({
 }))
 
 const { getState: get, setState: set } = useChatStore
+
+/** 回收站保留天数：超期自动清理。 */
+const TRASH_RETENTION_DAYS = 30
 
 const sortSessions = (sessions: SessionSummary[]) =>
   [...sessions].sort((a, b) => b.updatedAt - a.updatedAt)
@@ -221,6 +232,7 @@ const persist = (sessionId: string) => {
         }
         // 本地落盘成功后通知同步层；未登录时该通知无副作用
         notifySessionSaved(session)
+        invalidateSearchIndex()
       })
       .catch((error: unknown) => {
         db.reportStorageError('save session')(error)
@@ -314,7 +326,20 @@ export const initChat = (): Promise<void> => {
   set({ initError: false })
   initTask = (async () => {
     try {
-      const summaries = await db.loadSessionSummaries()
+      let summaries = await db.loadSessionSummaries()
+      // 回收站只保留 30 天，超期会话在启动时静默清理。
+      const cutoff = Date.now() - TRASH_RETENTION_DAYS * 86_400_000
+      const expired = summaries.filter(
+        (summary) => summary.deletedAt !== undefined && summary.deletedAt < cutoff
+      )
+      if (expired.length > 0) {
+        await Promise.all(
+          expired.map((summary) =>
+            db.deleteSession(summary.id).catch(db.reportStorageError('purge expired session'))
+          )
+        )
+        summaries = summaries.filter((summary) => !expired.some((item) => item.id === summary.id))
+      }
       if (epoch === historyEpoch) {
         set({ ready: true, sessions: sortSessions(summaries) })
       }
@@ -432,6 +457,7 @@ export const replaceHistory = async (write: () => Promise<void>): Promise<number
     unsavedSessions.clear()
     pendingFiles.clear()
     clearAllDrafts()
+    useStars.setState({ items: [], ready: true })
     set({
       ready: true,
       initError: false,
@@ -492,14 +518,193 @@ export const renameSession = (id: string, title: string) => {
   }
 }
 
-/**
- * 删除会话；本地原件仅在没有其他会话引用时清理。远端文件不删：导入、编辑、重新生成都会复用同一个附件，
- * 同一服务端文件可能被多个会话引用，不维护引用计数。
- */
+/** 更新会话组织信息：归档、回收站、置顶、文件夹、标签、工作区、提示词与隐藏。 */
+export const setSessionMeta = (id: string, patch: Partial<SessionMeta>) => {
+  if (get().importingHistory) {
+    return
+  }
+  const summary = get().sessions.find((session) => session.id === id)
+  if (!summary) {
+    return
+  }
+  const session = getSession(id)
+  if (session) {
+    updateSession(id, (current) => ({ ...current, ...patch }))
+    // 组织信息只改元数据、不推进 updatedAt，updateSession 可能判定摘要未变化；
+    // 这里显式刷新列表摘要，置顶、归档、回收站等视图才能立即响应。
+    set((state) => ({
+      sessions: state.sessions.map((item) =>
+        item.id === id ? toSessionSummary({ ...item, ...patch }) : item
+      ),
+    }))
+    persist(id)
+    return
+  }
+  set((state) => ({
+    sessions: state.sessions.map((item) =>
+      item.id === id ? toSessionSummary({ ...item, ...patch }) : item
+    ),
+  }))
+  void db
+    .updateSessionMeta(id, patch)
+    .then(async () => {
+      const session = await db.loadSession(id)
+      if (session) {
+        notifySessionSaved(session)
+      }
+    })
+    .catch(db.reportStorageError('update session meta'))
+}
+
+export const archiveSession = (id: string) =>
+  setSessionMeta(id, { archivedAt: Date.now(), pinned: false, pinnedAt: undefined })
+
+export const unarchiveSession = (id: string) =>
+  setSessionMeta(id, { archivedAt: undefined })
+
+export const setSessionPinned = (id: string, pinned: boolean) => {
+  const pinnedSessions = get().sessions.filter(
+    (session) => session.pinned && session.id !== id && !session.deletedAt
+  )
+  const maxOrder = pinnedSessions.reduce(
+    (max, session) => Math.max(max, session.pinnedOrder ?? session.pinnedAt ?? 0),
+    0
+  )
+  setSessionMeta(id, {
+    pinned,
+    pinnedAt: pinned ? Date.now() : undefined,
+    pinnedOrder: pinned ? maxOrder + 1 : undefined,
+  })
+}
+
+/** 置顶区拖拽排序：按当前显示顺序移动后重写 pinnedOrder。 */
+export const reorderPinnedSession = (sourceId: string, targetId: string) => {
+  if (sourceId === targetId) {
+    return
+  }
+  const pinned = get()
+    .sessions.filter((session) => session.pinned && !session.deletedAt && !session.archivedAt)
+    .sort((a, b) => (a.pinnedOrder ?? a.pinnedAt ?? 0) - (b.pinnedOrder ?? b.pinnedAt ?? 0))
+  const from = pinned.findIndex((session) => session.id === sourceId)
+  const to = pinned.findIndex((session) => session.id === targetId)
+  if (from < 0 || to < 0) {
+    return
+  }
+  const next = [...pinned]
+  const [moved] = next.splice(from, 1)
+  next.splice(to, 0, moved)
+  next.forEach((session, index) => setSessionMeta(session.id, { pinnedOrder: index + 1 }))
+}
+
+export const setSessionFolder = (id: string, folderId: string | null) =>
+  setSessionMeta(id, { folderId })
+
+export const setSessionTags = (id: string, tags: string[]) =>
+  setSessionMeta(id, {
+    tags: [...new Set(tags.map((tag) => tag.trim()).filter(Boolean))],
+  })
+
+export const setSessionWorkspace = (id: string, workspaceId: string | null) =>
+  setSessionMeta(id, { workspaceId })
+
+export const setSessionPersona = (id: string | null, personaId: string | null) => {
+  if (id === null) {
+    useLibrary.setState({ activePersonaId: personaId })
+    return
+  }
+  setSessionMeta(id, { personaId })
+}
+
+export const setSessionHidden = (id: string, hidden: boolean) =>
+  setSessionMeta(id, { hidden })
+
+/** 回收站：软删除，30 天内可恢复；不会立即清理附件原件。 */
 export const removeSession = (id: string): Promise<boolean> => {
+  const task = trashSession(id).finally(() => deletionTasks.delete(task))
+  deletionTasks.add(task)
+  return task
+}
+
+const trashSession = async (id: string): Promise<boolean> => {
+  if (get().importingHistory || deletingSessions.has(id)) {
+    return false
+  }
+  const epoch = historyEpoch
+  deletingSessions.add(id)
+  try {
+    getStreamController(id)?.abort()
+    await waitForIdle(id)
+    if (epoch !== historyEpoch) {
+      return false
+    }
+    setSessionMeta(id, {
+      deletedAt: Date.now(),
+      archivedAt: undefined,
+      pinned: false,
+      pinnedAt: undefined,
+      pinnedOrder: undefined,
+    })
+    if (get().activeId === id) {
+      set({ activeId: null })
+    }
+    return true
+  } catch (error) {
+    db.reportStorageError('trash session')(error)
+    return false
+  } finally {
+    deletingSessions.delete(id)
+    if (getSession(id) && !get().importingHistory) {
+      persist(id)
+    }
+  }
+}
+
+/** 从回收站恢复。 */
+export const restoreSession = (id: string) => setSessionMeta(id, { deletedAt: undefined })
+
+/** 永久删除（回收站内二次确认后调用）。 */
+export const purgeSession = (id: string): Promise<boolean> => {
   const task = removeSessionData(id).finally(() => deletionTasks.delete(task))
   deletionTasks.add(task)
   return task
+}
+
+export const emptyTrash = async () => {
+  const ids = get()
+    .sessions.filter((session) => session.deletedAt !== undefined)
+    .map((session) => session.id)
+  for (const id of ids) {
+    await purgeSession(id)
+  }
+  return ids.length
+}
+
+/** 复制为新会话，保留全部消息与附件引用，可继续追问。 */
+export const cloneSession = async (id: string): Promise<string | null> => {
+  if (get().importingHistory || deletingSessions.has(id)) {
+    return null
+  }
+  const stored = getSession(id) ?? (await db.loadSession(id))
+  if (!stored) {
+    return null
+  }
+  const now = Date.now()
+  const copy: Session = {
+    ...structuredClone(stored),
+    id: createId(),
+    title: `${stored.title || '新对话'} · 副本`,
+    createdAt: now,
+    updatedAt: now,
+    archivedAt: undefined,
+    deletedAt: undefined,
+    pinned: false,
+    pinnedAt: undefined,
+    pinnedOrder: undefined,
+  }
+  await applyRemoteSession(copy)
+  touchSession(copy.id)
+  selectSession(copy.id)
+  return copy.id
 }
 
 /** 从内存状态中彻底抹掉一个会话（不影响磁盘数据） */
@@ -509,6 +714,7 @@ const forgetSession = (id: string) => {
   unsavedSessions.delete(id)
   pendingFiles.delete(id)
   clearDraft(id)
+  invalidateSearchIndex()
   set((state) => ({
     sessions: state.sessions.filter((session) => session.id !== id),
     sessionCache: Object.fromEntries(
@@ -524,6 +730,10 @@ const forgetSession = (id: string) => {
   }))
 }
 
+/**
+ * 永久删除会话；本地原件仅在没有其他会话引用时清理。远端文件不删：导入、编辑、重新生成都会复用同一个附件，
+ * 同一服务端文件可能被多个会话引用，不维护引用计数。
+ */
 const removeSessionData = async (id: string): Promise<boolean> => {
   if (get().importingHistory || deletingSessions.has(id)) {
     return false
@@ -630,6 +840,7 @@ export const sendMessage = (targetSessionId: string | null) => {
     return false
   }
   if (sessionId === null) {
+    const library = useLibrary.getState()
     const session: Session = {
       id: createId(),
       title: '',
@@ -637,9 +848,15 @@ export const sendMessage = (targetSessionId: string | null) => {
       updatedAt: now,
       messages: [],
       rootMessageId: null,
+      workspaceId: library.activeWorkspaceId,
+      personaId: library.activePersonaId,
+      systemPrompt: library.pendingSystemPrompt ?? undefined,
     }
     sessionId = session.id
     touchSession(session.id)
+    if (library.pendingSystemPrompt) {
+      useLibrary.setState({ pendingSystemPrompt: null })
+    }
     set((state) => ({
       sessions: [toSessionSummary(session), ...state.sessions],
       sessionCache: { ...state.sessionCache, [session.id]: session },
@@ -655,13 +872,14 @@ export const sendMessage = (targetSessionId: string | null) => {
     id: createId(),
     role: 'user',
     content: text,
-    files: files.map(({ id, serverId, name, size, isImage, mimeType }) => ({
+    files: files.map(({ id, serverId, name, size, isImage, mimeType, note }) => ({
       id,
       serverId,
       name,
       size,
       isImage,
       mimeType,
+      note,
     })),
     createdAt: now,
   }
@@ -1044,6 +1262,7 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
   streamFlushes.set(sessionId, flush)
 
   try {
+    let cacheKey: string | null = null
     for (let attempt = 0; ; attempt += 1) {
       /** 附件补齐前出错属于上传失败，请求还没有发出 */
       let preparing = true
@@ -1058,26 +1277,60 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
         reply = { ...reply, latestReminder }
         updateReply(sessionId, reply)
         persist(sessionId)
-        const messages = toRequestMessages(
-          prepared.history,
-          prepared.question,
-          prepared.prefix,
-          initial.thinking ?? false,
-          latestReminder
-        )
         const settings = useSettings.getState()
-        // 自定义系统提示词每轮都带；首轮附加内容只在会话第一条提问时拼接
+        // 自定义系统提示词每轮都带；工作区与提示词库叠加在全局提示词之前，首轮附加内容只在会话第一条提问时拼接
+        const activeSession = getSession(sessionId)
+        const workspace = getWorkspace(activeSession?.workspaceId)
+        const persona = getPersona(activeSession?.personaId)
         const systemPrompt = [
           SYSTEM_PROMPT,
+          activeSession?.systemPrompt?.trim() ?? '',
+          workspace?.systemPrompt.trim() ?? '',
+          persona?.prompt.trim() ?? '',
           settings.systemPrompt.trim(),
           prepared.history.length === 0 ? settings.firstTurnPrompt.trim() : '',
         ]
           .filter(Boolean)
           .join('\n\n')
+        // 上下文自动裁剪：按窗口比例丢弃最早轮次，至少保留最近一轮
+        const history = settings.contextTrim
+          ? trimHistoryToBudget(
+              prepared.history,
+              prepared.question,
+              systemPrompt,
+              Math.max(2_000, Math.floor(settings.contextWindow * 0.8))
+            )
+          : prepared.history
+        const messages = toRequestMessages(
+          history,
+          prepared.question,
+          prepared.prefix,
+          initial.thinking ?? false,
+          latestReminder
+        )
+        const model = initial.model ?? MODEL
+        // 相同请求指纹直接复用本地结果，省去一次网络请求与费用
+        cacheKey = settings.responseCache
+          ? buildReplyCacheKey(model, systemPrompt, messages, initial.thinking ?? false)
+          : null
+        const cached = cacheKey ? readCachedReply(cacheKey) : null
+        if (cached) {
+          reply = settleReply(
+            {
+              ...reply,
+              blocks: [{ type: 'text', text: cached.text, citations: [] }],
+              usage: cached.usage,
+              stopReason: 'end_turn',
+            },
+            'done',
+            Date.now()
+          )
+          break
+        }
         const events = streamMessage(
           settings.apiKey ?? '',
           {
-            model: initial.model ?? MODEL,
+            model,
             system: systemPrompt,
             messages,
             thinking: { type: initial.thinking ? 'enabled' : 'disabled' },
@@ -1110,6 +1363,9 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
           }
         }
         reply = settleReply(reply, 'done', Date.now())
+        if (cacheKey && reply.stopReason !== 'refusal') {
+          writeCachedReply(cacheKey, getReplyText(reply), reply.usage)
+        }
         break
       } catch (error) {
         if (controller.signal.aborted) {
@@ -1124,6 +1380,17 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
             retryable: isRetryableApiError(error),
           })
           break
+        }
+        // Key 失效、余额不足或限流：未收到内容前自动切到下一条 Key 重试
+        if (
+          attempt < 2 &&
+          !receivedContent &&
+          error instanceof ApiError &&
+          (error.status === 401 || error.status === 402 || error.status === 429) &&
+          rotateApiKey()
+        ) {
+          await waitForRetry(attempt, controller.signal)
+          continue
         }
         // 附件失效：重新补传后重发。收到过内容块（含丢弃的客户端工具）后不自动重发。
         if (

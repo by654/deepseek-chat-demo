@@ -29,6 +29,8 @@
 }
 
 .title {
+  flex: 1;
+  min-width: 0;
   max-width: 520px;
   padding: 5px 8px;
   border-radius: var(--ui-radius-s);
@@ -41,6 +43,22 @@
   letter-spacing: -0.005em;
   color: var(--ui-text-1);
   transition: background-color var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding-left: 8px;
+}
+
+.archivedBadge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--ui-bg-hover);
+  color: var(--ui-text-3);
+  font-size: 11px;
 }
 
 .title:hover {

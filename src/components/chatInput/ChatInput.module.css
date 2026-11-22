@@ -39,6 +39,14 @@
   cursor: default;
 }
 
+.attachmentWrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 2px;
+}
+
 .attachment {
   position: relative;
   flex-shrink: 0;

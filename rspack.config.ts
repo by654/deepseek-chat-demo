@@ -83,7 +83,10 @@ export const createConfig = ({
     }),
     new rspack.DefinePlugin({ __API_ORIGIN__: JSON.stringify(apiOrigin) }),
     new rspack.CopyRspackPlugin({
-      patterns: [{ from: path.resolve(root, 'LICENSE'), to: 'LICENSE', toType: 'file' }],
+      patterns: [
+        { from: path.resolve(root, 'LICENSE'), to: 'LICENSE', toType: 'file' },
+        { from: path.resolve(root, 'src/public'), to: '.', noErrorOnMissing: true },
+      ],
     }),
   ],
   performance: { hints: false },

@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useTranslate } from '../../i18n/index.js'
 import { useUploads } from '../../services/attachments.js'
 import type { FileAttachment } from '../../services/chat/types.js'
@@ -43,6 +43,13 @@ export const MessageFile = ({
   const errorText = failed ? t(upload.error.key, upload.error.params) : undefined
 
   const retry = retryable ? onRetry : null
+  const note = file.note ? <div className={styles.note}>{file.note}</div> : null
+  const wrap = (node: ReactNode) => (
+    <div className={styles.wrap}>
+      {node}
+      {note}
+    </div>
+  )
 
   if (image && url !== null) {
     const preview = url ? (
@@ -51,13 +58,19 @@ export const MessageFile = ({
           <IconPhotoErrorFill20 />
         </span>
       ) : (
-        <img src={url} alt={file.name} onError={() => setFailedUrl(url)} />
+        <img
+          src={url}
+          alt={file.name}
+          loading="lazy"
+          decoding="async"
+          onError={() => setFailedUrl(url)}
+        />
       )
     ) : null
 
     // 上传中：本地原件已在 IndexedDB，先垫在蒙层下显示，避免只有一块灰色占位
     if (uploading) {
-      return (
+      return wrap(
         <div className={clsx(styles.image, styles.imageThumb)} title={file.name}>
           {preview}
           <div className={styles.overlay}>
@@ -75,7 +88,7 @@ export const MessageFile = ({
 
     // 上传失败不可重试：保留缩略图，底部渐变显示原因
     if (failed && !retry) {
-      return (
+      return wrap(
         <div
           className={clsx(styles.image, styles.imageThumb)}
           title={errorText}
@@ -94,7 +107,7 @@ export const MessageFile = ({
     // 上传失败可重试：缩略图 + 红色描边 + 蒙层重试图标，原因在底部
     if (failed && retry) {
       const retryLabel = t('uploadRetry', { message: errorText ?? t('uploadFileStatusFailed') })
-      return (
+      return wrap(
         <Tooltip content={retryLabel}>
           <button
             type="button"
@@ -113,17 +126,19 @@ export const MessageFile = ({
     }
 
     // 正常态：链接到原件
-    return link ? (
-      <a className={clsx(styles.image, styles.imageThumb)} {...link} title={file.name}>
-        {preview}
-      </a>
-    ) : (
-      // 原件还没加载出来（极短暂）
-      <div className={styles.image} />
+    return wrap(
+      link ? (
+        <a className={clsx(styles.image, styles.imageThumb)} {...link} title={file.name}>
+          {preview}
+        </a>
+      ) : (
+        // 原件还没加载出来（极短暂）
+        <div className={styles.image} />
+      )
     )
   }
 
-  return (
+  return wrap(
     <FileCard
       name={file.name}
       size={file.size}
