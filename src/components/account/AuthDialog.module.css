@@ -1,0 +1,63 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 320px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ui-text-2);
+}
+
+.input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-m);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text-1);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color var(--ds-transition-duration) var(--ds-ease-out), box-shadow var(--ds-transition-duration) var(--ds-ease-out);
+}
+
+.input:focus {
+  border-color: var(--ui-brand);
+  box-shadow: 0 0 0 3px var(--ui-ring);
+}
+
+.error {
+  padding: 8px 10px;
+  border-radius: var(--ui-radius-m);
+  background: var(--ui-danger-soft, rgba(220, 38, 38, 0.1));
+  color: var(--ui-danger, #dc2626);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.switch {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--ui-brand-text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+
+.switch:hover {
+  text-decoration: underline;
+}

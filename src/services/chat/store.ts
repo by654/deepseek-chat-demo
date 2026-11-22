@@ -16,6 +16,7 @@ import {
   prepareDraftMessage,
 } from './drafts.js'
 import { createLatestReminder } from './latestReminder.js'
+import { notifySessionDeleted, notifySessionSaved } from '../sync/chatEvents.js'
 import {
   applyEvent,
   canContinueReply,
@@ -170,6 +171,17 @@ const updateSession = (id: string, update: (session: Session) => Session) =>
     }
   })
 
+/**
+ * 内容变更后推进会话时间戳，保证严格递增。
+ * 助手回答收尾、附件 serverId 回填、切换消息版本都不经过 sendMessage，
+ * 若只改内容不改 updatedAt，云端 last-write-wins 会把更新更晚的内容判成没变。
+ */
+const touchUpdatedAt = (id: string) =>
+  updateSession(id, (session) => ({
+    ...session,
+    updatedAt: Math.max(Date.now(), session.updatedAt + 1),
+  }))
+
 const updateReply = (sessionId: string, reply: AssistantMessage) =>
   updateSession(sessionId, (session) => ({
     ...session,
@@ -207,6 +219,8 @@ const persist = (sessionId: string) => {
           }))
           trimSessionCache()
         }
+        // 本地落盘成功后通知同步层；未登录时该通知无副作用
+        notifySessionSaved(session)
       })
       .catch((error: unknown) => {
         db.reportStorageError('save session')(error)
@@ -488,6 +502,28 @@ export const removeSession = (id: string): Promise<boolean> => {
   return task
 }
 
+/** 从内存状态中彻底抹掉一个会话（不影响磁盘数据） */
+const forgetSession = (id: string) => {
+  sessionLoads.delete(id)
+  sessionAccess.delete(id)
+  unsavedSessions.delete(id)
+  pendingFiles.delete(id)
+  clearDraft(id)
+  set((state) => ({
+    sessions: state.sessions.filter((session) => session.id !== id),
+    sessionCache: Object.fromEntries(
+      Object.entries(state.sessionCache).filter(([key]) => key !== id)
+    ),
+    sessionLoadErrors: Object.fromEntries(
+      Object.entries(state.sessionLoadErrors).filter(([key]) => key !== id)
+    ),
+    sessionSaveErrors: Object.fromEntries(
+      Object.entries(state.sessionSaveErrors).filter(([key]) => key !== id)
+    ),
+    activeId: state.activeId === id ? null : state.activeId,
+  }))
+}
+
 const removeSessionData = async (id: string): Promise<boolean> => {
   if (get().importingHistory || deletingSessions.has(id)) {
     return false
@@ -505,24 +541,9 @@ const removeSessionData = async (id: string): Promise<boolean> => {
     if (epoch !== historyEpoch) {
       return true
     }
-    sessionLoads.delete(id)
-    sessionAccess.delete(id)
-    unsavedSessions.delete(id)
-    pendingFiles.delete(id)
-    clearDraft(id)
-    set((state) => ({
-      sessions: state.sessions.filter((session) => session.id !== id),
-      sessionCache: Object.fromEntries(
-        Object.entries(state.sessionCache).filter(([key]) => key !== id)
-      ),
-      sessionLoadErrors: Object.fromEntries(
-        Object.entries(state.sessionLoadErrors).filter(([key]) => key !== id)
-      ),
-      sessionSaveErrors: Object.fromEntries(
-        Object.entries(state.sessionSaveErrors).filter(([key]) => key !== id)
-      ),
-      activeId: state.activeId === id ? null : state.activeId,
-    }))
+    forgetSession(id)
+    // 登录状态下由同步层删除云端对应行
+    notifySessionDeleted(id)
     return true
   } catch (error) {
     db.reportStorageError('delete session')(error)
@@ -536,6 +557,51 @@ const removeSessionData = async (id: string): Promise<boolean> => {
       } else {
         persist(id)
       }
+    }
+  }
+}
+
+/** 云端下发的会话写回本地：本地不存在或本地更旧才覆盖，并同步更新列表 */
+export const applyRemoteSession = async (session: Session): Promise<void> => {
+  await db.saveSession(session)
+  touchSession(session.id)
+  set((state) => {
+    const previous = Object.hasOwn(state.sessionCache, session.id)
+      ? state.sessionCache[session.id]
+      : undefined
+    const cache =
+      previous && previous.updatedAt >= session.updatedAt
+        ? state.sessionCache
+        : { ...state.sessionCache, [session.id]: session }
+    return {
+      sessions: sortSessions([
+        ...state.sessions.filter((summary) => summary.id !== session.id),
+        toSessionSummary(session),
+      ]),
+      sessionCache: cache,
+    }
+  })
+}
+
+/** 其他设备删除了会话：清理本地存储与界面状态（不再回推云端） */
+export const dropLocalSession = async (sessionId: string): Promise<void> => {
+  if (deletingSessions.has(sessionId)) {
+    return
+  }
+  deletingSessions.add(sessionId)
+  try {
+    getStreamController(sessionId)?.abort()
+    // 等生成收尾的落盘完成，否则收尾会把刚删掉的会话又写回本地
+    await waitForIdle(sessionId)
+    await db.deleteSession(sessionId)
+    forgetSession(sessionId)
+  } catch (error) {
+    db.reportStorageError('delete session')(error)
+  } finally {
+    deletingSessions.delete(sessionId)
+    // 删除失败时保留会话最新状态
+    if (getSession(sessionId)) {
+      persist(sessionId)
     }
   }
 }
@@ -683,6 +749,7 @@ export const selectMessageVersion = (sessionId: string, messageId: string) => {
     return
   }
   updateSession(sessionId, (session) => selectVersion(session, messageId))
+  touchUpdatedAt(sessionId)
   persist(sessionId)
 }
 
@@ -770,6 +837,7 @@ const saveServerIds = (sessionId: string, serverIds: Map<string, string>) => {
         : message
     ),
   }))
+  touchUpdatedAt(sessionId)
   persist(sessionId)
 }
 
@@ -1094,6 +1162,9 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
     streamFlushes.delete(sessionId)
     cancelAnimationFrame(frame)
     updateReply(sessionId, reply)
+    // 终态补偿：正常结束、被停止、出错终止都走到这里。
+    // 先推进 updatedAt，再落盘，落盘成功后的通知才会带着「内容更新、时间戳更新」的终态快照去推送。
+    touchUpdatedAt(sessionId)
     set((state) => ({
       streaming: Object.fromEntries(
         Object.entries(state.streaming).filter(([id]) => id !== sessionId)

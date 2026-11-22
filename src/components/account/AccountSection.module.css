@@ -1,0 +1,183 @@
+.account {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 0 2px 4px;
+}
+
+.signIn {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-m);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text-1);
+  font: inherit;
+  font-size: 14px;
+  text-align: center;
+  cursor: pointer;
+  outline: none;
+  transition: background-color var(--ds-transition-duration) var(--ds-ease-out),
+    border-color var(--ds-transition-duration) var(--ds-ease-out);
+}
+
+.signIn:hover {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+}
+
+.signIn:focus-visible {
+  box-shadow: 0 0 0 2px var(--ui-ring);
+}
+
+.userRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 4px 4px 2px;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand-text-strong);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.username {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ui-text-1);
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.signOut {
+  flex-shrink: 0;
+  padding: 2px 4px;
+  border: none;
+  background: none;
+  color: var(--ui-text-3);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+}
+
+.signOut:hover {
+  color: var(--ui-text-1);
+  text-decoration: underline;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-m);
+  background: var(--ui-bg-surface);
+  color: var(--ui-text-2);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+  transition: background-color var(--ds-transition-duration) var(--ds-ease-out),
+    border-color var(--ds-transition-duration) var(--ds-ease-out), color var(--ds-transition-duration) var(--ds-ease-out);
+}
+
+.action:hover:not(:disabled) {
+  border-color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+  color: var(--ui-text-1);
+}
+
+.action:focus-visible {
+  box-shadow: 0 0 0 2px var(--ui-ring);
+}
+
+.action:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 2px;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 2px;
+  color: var(--ui-text-3);
+  font-size: 11.5px;
+  line-height: 16px;
+}
+
+.metaText {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pending {
+  flex-shrink: 0;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand-text-strong);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.progressLabel {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--ui-text-3);
+  font-size: 11.5px;
+  line-height: 16px;
+}
+
+.progressText {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--ui-border-subtle, rgba(0, 0, 0, 0.08));
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--ui-brand);
+  transition: width var(--ds-transition-duration) var(--ds-ease-out);
+}

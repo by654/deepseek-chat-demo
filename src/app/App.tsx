@@ -10,6 +10,7 @@ import {
   selectSession,
   useChatStore,
 } from '../services/chat/store.js'
+import { startCloudSync } from '../services/sync/cloudSync.js'
 import { SearchPanel } from '../components/search/SearchPanel.js'
 import { closeSearchPanel } from '../components/search/searchPanelState.js'
 import { SessionView } from '../components/session/SessionView.js'
@@ -83,6 +84,8 @@ export const App = () => {
   // 文件数、存储空间达到上限时，附件上只显示「上传失败」，原因用 toast 说明
   useEffect(() => onUploadNotice(showToast), [])
   useEffect(bindChatPersistence, [])
+  // 恢复登录态并开启云端同步（含跨端实时订阅）；未登录时只做本地存储
+  useEffect(startCloudSync, [])
 
   // 搜索结果面板只属于当前会话
   useEffect(closeSearchPanel, [activeId])
