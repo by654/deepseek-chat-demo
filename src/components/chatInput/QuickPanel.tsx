@@ -1,10 +1,12 @@
 import clsx from 'clsx'
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   IconCheckedOutline14,
   IconChevronDownOutline14,
   IconRefreshOutline16,
 } from '../base/icons.js'
+import { useAnchoredPosition } from '../base/anchored.js'
 import { setSessionModel, useSessionModel } from '../../services/chat/model.js'
 import { refreshBalanceNow, useBalance } from '../../services/account/balance.js'
 import { useSettings } from '../../services/settings.js'
@@ -26,6 +28,14 @@ const formatMoney = (total: string, currency: string | null) => {
 export const QuickPanel = ({ sessionId }: { sessionId: string | null }) => {
   const t = useTranslate()
   const [open, setOpen] = useState(false)
+  /*
+   * 面板挂到 body 上按视口定位：输入卡片有 overflow: hidden（负责圆角裁切），
+   * 面板如果留在卡片内部，向上展开时会被卡片顶边裁掉大半。
+   */
+  const { anchorRef, floatingRef, position } = useAnchoredPosition<HTMLDivElement, HTMLDivElement>(
+    open,
+    { side: 'top', align: 'end', offset: 10, maxHeight: 360, minSpace: 180 }
+  )
   const model = useSessionModel(sessionId)
   const apiKey = useSettings((state) => state.apiKey)
   const status = useBalance((state) => state.status)
@@ -64,7 +74,7 @@ export const QuickPanel = ({ sessionId }: { sessionId: string | null }) => {
           : null
 
   return (
-    <div className={styles.wrap}>
+    <div ref={anchorRef} className={styles.wrap}>
       <button
         type="button"
         className={clsx(styles.trigger, open && styles.open)}
@@ -77,61 +87,75 @@ export const QuickPanel = ({ sessionId }: { sessionId: string | null }) => {
           <IconChevronDownOutline14 />
         </span>
       </button>
-      {open ? (
-        <>
-          <div className={styles.backdrop} onClick={() => setOpen(false)} />
-          <div className={styles.panel} role="dialog" aria-label={t('modelPanelTitle')}>
-            <div className={styles.groupTitle}>{t('modelPanelBalance')}</div>
-            <div className={styles.balanceRow}>
-              <span className={clsx(styles.amount, loading && styles.pending)}>
-                {balanceText}
-              </span>
-              <button
-                type="button"
-                className={styles.refresh}
-                aria-label={t('balanceRefreshNow')}
-                aria-busy={loading}
-                disabled={!apiKey || loading}
-                onClick={() => {
-                  if (apiKey) {
-                    void refreshBalanceNow(apiKey)
-                  }
+      {open
+        ? createPortal(
+            <>
+              <div className={styles.backdrop} onClick={() => setOpen(false)} />
+              <div
+                ref={floatingRef}
+                className={styles.panel}
+                role="dialog"
+                aria-label={t('modelPanelTitle')}
+                style={{
+                  top: position?.top ?? 0,
+                  right: position?.right ?? 8,
+                  maxHeight: position?.maxHeight,
+                  visibility: position ? 'visible' : 'hidden',
                 }}
               >
-                <span className={clsx(styles.refreshIcon, loading && styles.spin)}>
-                  <IconRefreshOutline16 />
-                </span>
-              </button>
-            </div>
-            {balanceHint ? <div className={styles.hint}>{balanceHint}</div> : null}
-            <div className={styles.divider} />
-            <div className={styles.groupTitle}>{t('modelPanelModel')}</div>
-            <div className={styles.modelList} role="listbox" aria-label={t('modelLabel')}>
-              {MODELS.map((item) => {
-                const active = item.value === model
-                return (
+                <div className={styles.groupTitle}>{t('modelPanelBalance')}</div>
+                <div className={styles.balanceRow}>
+                  <span className={clsx(styles.amount, loading && styles.pending)}>
+                    {balanceText}
+                  </span>
                   <button
-                    key={item.value}
                     type="button"
-                    role="option"
-                    aria-selected={active}
-                    className={clsx(styles.model, active && styles.modelActive)}
+                    className={styles.refresh}
+                    aria-label={t('balanceRefreshNow')}
+                    aria-busy={loading}
+                    disabled={!apiKey || loading}
                     onClick={() => {
-                      setSessionModel(sessionId, item.value)
-                      setOpen(false)
+                      if (apiKey) {
+                        void refreshBalanceNow(apiKey)
+                      }
                     }}
                   >
-                    <span className={styles.modelName}>{t(item.label)}</span>
-                    <span className={styles.modelCheck}>
-                      {active ? <IconCheckedOutline14 /> : null}
+                    <span className={clsx(styles.refreshIcon, loading && styles.spin)}>
+                      <IconRefreshOutline16 />
                     </span>
                   </button>
-                )
-              })}
-            </div>
-          </div>
-        </>
-      ) : null}
+                </div>
+                {balanceHint ? <div className={styles.hint}>{balanceHint}</div> : null}
+                <div className={styles.divider} />
+                <div className={styles.groupTitle}>{t('modelPanelModel')}</div>
+                <div className={styles.modelList} role="listbox" aria-label={t('modelLabel')}>
+                  {MODELS.map((item) => {
+                    const active = item.value === model
+                    return (
+                      <button
+                        key={item.value}
+                        type="button"
+                        role="option"
+                        aria-selected={active}
+                        className={clsx(styles.model, active && styles.modelActive)}
+                        onClick={() => {
+                          setSessionModel(sessionId, item.value)
+                          setOpen(false)
+                        }}
+                      >
+                        <span className={styles.modelName}>{t(item.label)}</span>
+                        <span className={styles.modelCheck}>
+                          {active ? <IconCheckedOutline14 /> : null}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </>,
+            document.body
+          )
+        : null}
     </div>
   )
 }

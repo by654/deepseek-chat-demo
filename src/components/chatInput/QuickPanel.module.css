@@ -59,18 +59,19 @@
   background-color: transparent;
 }
 
+/* 面板挂到 body 上按视口固定定位，避免被输入卡片的 overflow: hidden 裁切 */
 .panel {
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 10px);
+  position: fixed;
   z-index: 41;
   box-sizing: border-box;
-  width: min(252px, calc(100vw - 40px));
+  width: min(252px, calc(100vw - 24px));
   padding: 10px;
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius-l);
   background-color: var(--ui-bg-elevated);
   box-shadow: var(--ui-shadow-popover, 0 12px 32px -12px rgba(8, 20, 26, 0.28));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   transform-origin: bottom right;
   animation: panelIn 160ms var(--ds-ease-in-out) both;
   will-change: transform, opacity;
